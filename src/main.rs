@@ -10,11 +10,13 @@ use ratatui::{
     Terminal,
 };
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::{
     env, fs, io,
     path::PathBuf,
+    str::FromStr,
     sync::{Arc, Mutex},
     thread,
     time::Duration,
@@ -47,6 +49,13 @@ fn toggle_play_pause(sink: SharedSink) {
     }
 }
 
+fn set_play_speed(sink: SharedSink, mag: f32) {
+    let sink_guard = sink.lock().unwrap();
+    if let Some(sink) = &*sink_guard {
+        sink.set_speed(mag);
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -58,24 +67,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut selected: usize = 0;
     let mut list_state = ListState::default();
     list_state.select(Some(selected));
+    let mut sel_map: HashMap<PathBuf, usize> = HashMap::new();
+    sel_map.insert(env::current_dir()?, 0);
 
     // Shared output stream and sink for audio control
     let (_stream, stream_handle) = OutputStream::try_default()?;
     let sink = Arc::new(Mutex::new(None));
 
     loop {
-        let mut entries: Vec<PathBuf> = fs::read_dir(&current_dir)?
-            .filter_map(|entry| {
-                entry.ok().map(|e| e.path()).filter(|path| {
-                    if let Some(file_name) = path.file_name() {
-                        !file_name.to_string_lossy().starts_with('.')
-                    } else {
-                        false
+        let mut directories: Vec<PathBuf> = Vec::new();
+        let mut flac_files: Vec<PathBuf> = Vec::new();
+        let mut other_files: Vec<PathBuf> = Vec::new();
+
+        for entry in fs::read_dir(&current_dir)? {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if let Some(file_name) = path.file_name() {
+                    if file_name.to_string_lossy().starts_with('.') {
+                        continue;
                     }
-                })
-            })
+                }
+                if path.is_dir() {
+                    directories.push(path);
+                } else if let Some(ext) = path.extension() {
+                    if ext.to_string_lossy().eq_ignore_ascii_case("flac") {
+                        flac_files.push(path);
+                    } else {
+                        other_files.push(path);
+                    }
+                }
+            }
+        }
+
+        directories.sort();
+        flac_files.sort();
+        other_files.sort();
+
+        let entries: Vec<PathBuf> = directories
+            .into_iter()
+            .chain(flac_files.into_iter())
+            .chain(other_files.into_iter())
             .collect();
-        entries.sort();
 
         let items: Vec<ListItem> = entries
             .iter()
@@ -84,12 +116,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .file_name()
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_else(|| String::from("Unknown"));
-                let display = if entry.is_dir() {
+
+                let is_dir = entry.is_dir();
+                let display = if is_dir {
                     format!("{}/", file_name)
                 } else {
                     file_name
                 };
-                ListItem::new(display)
+
+                let style = if is_dir {
+                    Style::default().fg(Color::from_str("#6B5DFF").unwrap())
+                } else {
+                    Style::default().fg(Color::from_str("#F98771").unwrap())
+                };
+
+                ListItem::new(display).style(style)
             })
             .collect();
 
@@ -103,12 +144,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let size = f.area();
             let block = Block::default()
                 .borders(Borders::ALL)
-                .title(format!("Directory: {}", current_dir.display()));
+                .border_style(Style::default().fg(Color::from_str("#1F153E").unwrap()))
+                .title(format!("{}", current_dir.display()))
+                .title_position(ratatui::widgets::block::Position::Top)
+                .title_style(Style::default().fg(Color::from_str("#00FFAA").unwrap()));
 
             let list = List::new(items)
                 .block(block)
-                .highlight_style(Style::default().fg(Color::Blue))
-                .highlight_symbol(">> ");
+                .highlight_style(Style::default().fg(Color::from_str("#00EAFF").unwrap()));
             f.render_stateful_widget(list, size, &mut list_state);
         })?;
 
@@ -117,19 +160,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 match key.code {
                     KeyCode::Char('q') => break,
                     KeyCode::Down => {
-                        if selected < entries.len().saturating_sub(1) {
+                        if selected < entries.len() - 1 {
                             selected += 1;
+                            sel_map.insert(current_dir.clone(), selected);
+                        } else {
+                            selected = 0;
+                            sel_map.insert(current_dir.clone(), selected);
                         }
                     }
                     KeyCode::Up => {
-                        if selected > 0 {
+                        if selected == 0 {
+                            selected = entries.len() - 1;
+                            sel_map.insert(current_dir.clone(), selected);
+                        } else {
                             selected -= 1;
+                            sel_map.insert(current_dir.clone(), selected);
                         }
                     }
                     KeyCode::Enter => {
                         if let Some(path) = entries.get(selected) {
                             if let Some(ext) = path.extension() {
-                                if ext.to_string_lossy().to_lowercase() == "flac" {
+                                if ext.to_string_lossy() == "flac" {
                                     let stream_handle_clone = stream_handle.clone();
                                     let sink_clone = Arc::clone(&sink);
                                     let path_clone = path.clone();
@@ -143,20 +194,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     KeyCode::Right => {
                         if let Some(path) = entries.get(selected) {
                             if path.is_dir() {
-                                // Enter directory.
+                                if let Some(&value) = sel_map.get(path) {
+                                    selected = value;
+                                } else {
+                                    selected = 0;
+                                }
                                 current_dir = path.clone();
-                                selected = 0;
                             }
                         }
                     }
                     KeyCode::Left => {
                         if let Some(parent) = current_dir.parent() {
+                            if let Some(&value) = sel_map.get(parent) {
+                                selected = value;
+                            } else {
+                                selected = 0;
+                            }
                             current_dir = parent.to_path_buf();
-                            selected = 0;
                         }
                     }
                     KeyCode::Char(' ') => {
                         toggle_play_pause(Arc::clone(&sink));
+                    }
+                    KeyCode::Char(',') => {
+                        set_play_speed(Arc::clone(&sink), 0.75);
+                    }
+                    KeyCode::Char('.') => {
+                        set_play_speed(Arc::clone(&sink), 1.0);
+                    }
+                    KeyCode::Char('/') => {
+                        set_play_speed(Arc::clone(&sink), 1.5);
                     }
                     _ => {}
                 }
