@@ -1,67 +1,82 @@
-use std::io::{self, BufReader};
-use std::path::PathBuf;
-use std::thread;
-use std::time::Duration;
-use std::{env, fs};
-
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
     backend::CrosstermBackend,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
     Terminal,
 };
-use rodio::{Decoder, OutputStream, Sink};
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 use std::fs::File;
+use std::io::BufReader;
+use std::{
+    env, fs, io,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
-fn play_flac_file(path: &PathBuf) {
-    let file = File::open(path).expect("Failed to open file");
+// Shared OutputStreamHandle to keep audio alive
+type SharedSink = Arc<Mutex<Option<Sink>>>;
+
+// Plays a FLAC file using rodio on a separate thread.
+fn play_flac_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedSink) {
+    let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
+    let source = Decoder::new(reader).unwrap();
+    let new_sink = Sink::try_new(&stream_handle).unwrap();
 
-    // Create an audio output stream.
-    let (_stream, stream_handle) =
-        OutputStream::try_default().expect("Failed to get default audio output stream");
+    new_sink.append(source);
 
-    // Create a sink (for controlling playback).
-    let sink = Sink::try_new(&stream_handle).expect("Failed to create audio sink");
+    // Store the sink in shared state
+    *sink.lock().unwrap() = Some(new_sink);
+}
 
-    // Decode the FLAC file.
-    let source = Decoder::new(reader).expect("Failed to decode FLAC file");
-    sink.append(source);
-
-    // Wait until the file finishes playing.
-    sink.sleep_until_end();
+fn toggle_play_pause(sink: SharedSink) {
+    let sink_guard = sink.lock().unwrap();
+    if let Some(sink) = &*sink_guard {
+        if sink.is_paused() {
+            sink.play();
+        } else {
+            sink.pause();
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Setup terminal in raw mode and enter alternate screen.
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Start at the current directory.
     let mut current_dir = env::current_dir()?;
     let mut selected: usize = 0;
-
-    // Create a ListState to track selection.
     let mut list_state = ListState::default();
     list_state.select(Some(selected));
 
+    // Shared output stream and sink for audio control
+    let (_stream, stream_handle) = OutputStream::try_default()?;
+    let sink = Arc::new(Mutex::new(None));
+
     loop {
-        // Read the entries in the current directory.
         let mut entries: Vec<PathBuf> = fs::read_dir(&current_dir)?
-            .filter_map(|entry| entry.ok().map(|e| e.path()))
+            .filter_map(|entry| {
+                entry.ok().map(|e| e.path()).filter(|path| {
+                    if let Some(file_name) = path.file_name() {
+                        !file_name.to_string_lossy().starts_with('.')
+                    } else {
+                        false
+                    }
+                })
+            })
             .collect();
-        // Sort entries alphabetically.
         entries.sort();
 
-        // Convert entries to ListItem widgets.
         let items: Vec<ListItem> = entries
             .iter()
             .map(|entry| {
@@ -69,7 +84,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .file_name()
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_else(|| String::from("Unknown"));
-                // Add a visual hint for directories.
                 let display = if entry.is_dir() {
                     format!("{}/", file_name)
                 } else {
@@ -79,41 +93,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             })
             .collect();
 
-        // Update the ListState with the current selection.
-        if selected >= entries.len() && !entries.is_empty() {
-            selected = entries.len() - 1;
-        }
         list_state.select(if entries.is_empty() {
             None
         } else {
             Some(selected)
         });
 
-        // Draw the UI.
         terminal.draw(|f| {
             let size = f.area();
             let block = Block::default()
                 .borders(Borders::ALL)
                 .title(format!("Directory: {}", current_dir.display()));
 
-            // Create a List widget.
             let list = List::new(items)
                 .block(block)
-                .highlight_style(
-                    Style::default()
-                        .bg(Color::Blue)
-                        .fg(Color::White)
-                        .add_modifier(Modifier::BOLD),
-                )
+                .highlight_style(Style::default().fg(Color::Blue))
                 .highlight_symbol(">> ");
             f.render_stateful_widget(list, size, &mut list_state);
         })?;
 
-        // Handle key events.
         if event::poll(Duration::from_millis(200))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    KeyCode::Char('q') => break, // Quit
+                    KeyCode::Char('q') => break,
                     KeyCode::Down => {
                         if selected < entries.len().saturating_sub(1) {
                             selected += 1;
@@ -124,21 +126,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             selected -= 1;
                         }
                     }
-                    KeyCode::Left => {
-                        if let Some(parent) = current_dir.parent() {
-                            current_dir = parent.to_path_buf();
-                            selected = 0;
-                        }
-                    }
                     KeyCode::Enter => {
-                        // If no entry is selected, do nothing.
                         if let Some(path) = entries.get(selected) {
                             if let Some(ext) = path.extension() {
                                 if ext.to_string_lossy().to_lowercase() == "flac" {
-                                    // Spawn a new thread to play the FLAC file.
+                                    let stream_handle_clone = stream_handle.clone();
+                                    let sink_clone = Arc::clone(&sink);
                                     let path_clone = path.clone();
                                     thread::spawn(move || {
-                                        play_flac_file(&path_clone);
+                                        play_flac_file(path_clone, stream_handle_clone, sink_clone);
                                     });
                                 }
                             }
@@ -153,19 +149,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     }
+                    KeyCode::Left => {
+                        if let Some(parent) = current_dir.parent() {
+                            current_dir = parent.to_path_buf();
+                            selected = 0;
+                        }
+                    }
+                    KeyCode::Char(' ') => {
+                        toggle_play_pause(Arc::clone(&sink));
+                    }
                     _ => {}
                 }
             }
         }
     }
 
-    // Restore terminal state.
     disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
     Ok(())
 }
