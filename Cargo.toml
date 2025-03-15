@@ -4,18 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-claxon = "0.4.3"
 color-eyre = "0.6.3"
-cpal = "0.15.3"
 crossterm = "0.28.1"
 ratatui = "0.29.0"
 rodio = { version = "0.20.1", features = ["symphonia-all"] }
 symphonia = "0.5.4"
 
 [profile.release]
-debuginfo     = 0
-opt-level     = "z"
-codegen-units = 1
-lto           = true
-panic         = "abort"
+opt-level     = 3
+debug         = 0
 strip         = true
+lto           = true
+codegen-units = 1
+panic         = "abort"

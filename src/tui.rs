@@ -1,3 +1,4 @@
+use crate::audio::{play_flac_file, set_play_speed, toggle_play_pause, SharedSink};
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
@@ -14,9 +15,6 @@ use std::{
     collections::HashMap, env, fs, io, path::PathBuf, str::FromStr, sync::Arc, thread,
     time::Duration,
 };
-
-use crate::audio::{play_flac_file, set_play_speed, toggle_play_pause, SharedSink};
-
 /// Runs the file browser and TUI event loop.
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
@@ -29,6 +27,8 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     let mut selected: usize = 0;
     let mut list_state = ListState::default();
     list_state.select(Some(selected));
+
+    let mut playing_file: Option<String> = None;
     let mut sel_map: HashMap<PathBuf, usize> = HashMap::new();
     sel_map.insert(current_dir.clone(), 0);
 
@@ -107,8 +107,11 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
             let block = Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(Color::from_str("#1F153E").unwrap()))
-                .title(format!("{}", current_dir.display()))
-                .title_position(ratatui::widgets::block::Position::Top)
+                .title_top(format!("{}", current_dir.display()))
+                .title_bottom(match &playing_file {
+                    Some(file) => format!("Playing: {}", file),
+                    None => String::new(),
+                })
                 .title_style(Style::default().fg(Color::from_str("#00FFAA").unwrap()));
 
             let list = List::new(items)
@@ -145,6 +148,9 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                             thread::spawn(move || {
                                 play_flac_file(path_clone, stream_handle_clone, sink_clone);
                             });
+                            playing_file = path
+                                .file_name()
+                                .map(|name| name.to_string_lossy().to_string());
                         }
                     }
                     KeyCode::Right => {
