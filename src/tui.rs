@@ -1,4 +1,5 @@
-use crate::audio::{play_flac_file, set_play_speed, toggle_play_pause, SharedSink};
+use crate::audio::{get_vol, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
+// use audiotags::Tag;
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
@@ -7,7 +8,9 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     style::{Color, Style},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    symbols::border,
+    text::{Line, Span},
+    widgets::{Block, List, ListItem, ListState},
     Terminal,
 };
 use rodio::OutputStream;
@@ -15,6 +18,7 @@ use std::{
     collections::HashMap, env, fs, io, path::PathBuf, str::FromStr, sync::Arc, thread,
     time::Duration,
 };
+
 /// Runs the file browser and TUI event loop.
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
@@ -28,6 +32,11 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     let mut list_state = ListState::default();
     list_state.select(Some(selected));
 
+    let mut play_speed: f32 = 1.0;
+    let mut vol: f32 = 1.0;
+    let mut paused: bool = false;
+    let mut muted: bool = false;
+
     let mut playing_file: Option<String> = None;
     let mut sel_map: HashMap<PathBuf, usize> = HashMap::new();
     sel_map.insert(current_dir.clone(), 0);
@@ -38,8 +47,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
     loop {
         let mut directories: Vec<PathBuf> = Vec::new();
-        let mut flac_files: Vec<PathBuf> = Vec::new();
-        let mut other_files: Vec<PathBuf> = Vec::new();
+        let mut files: Vec<PathBuf> = Vec::new();
 
         for entry in fs::read_dir(&current_dir)? {
             if let Ok(entry) = entry {
@@ -51,25 +59,16 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 if path.is_dir() {
                     directories.push(path);
-                } else if let Some(ext) = path.extension() {
-                    if ext.to_string_lossy().eq_ignore_ascii_case("flac") {
-                        flac_files.push(path);
-                    } else {
-                        other_files.push(path);
-                    }
+                } else {
+                    files.push(path);
                 }
             }
         }
 
         directories.sort();
-        flac_files.sort();
-        other_files.sort();
+        files.sort();
 
-        let entries: Vec<PathBuf> = directories
-            .into_iter()
-            .chain(flac_files.into_iter())
-            .chain(other_files.into_iter())
-            .collect();
+        let entries: Vec<PathBuf> = directories.into_iter().chain(files.into_iter()).collect();
 
         let items: Vec<ListItem> = entries
             .iter()
@@ -81,7 +80,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
                 let is_dir = entry.is_dir();
                 let display = if is_dir {
-                    format!("{}/", file_name)
+                    format!("{}", file_name)
                 } else {
                     file_name
                 };
@@ -104,19 +103,68 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
         terminal.draw(|f| {
             let size = f.area();
-            let block = Block::default()
-                .borders(Borders::ALL)
+
+            // bottom right
+            let bottom = Line::from(vec![
+                Span::styled(
+                    format!("Paused: {:>5}", paused),
+                    Style::default().fg(Color::from_str("#417BFF").unwrap()),
+                ),
+                Span::styled(
+                    " | ",
+                    Style::default().fg(Color::from_str("#00ffaa").unwrap()),
+                ),
+                Span::styled(
+                    format!("Muted: {:>5}", muted),
+                    Style::default().fg(Color::from_str("#AE5DFF").unwrap()),
+                ),
+                Span::styled(
+                    " | ",
+                    Style::default().fg(Color::from_str("#00ffaa").unwrap()),
+                ),
+                // Span::styled(
+                //     format!("Volume: {:<2.2}%", vol),
+                //     Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
+                // ),
+                Span::styled(
+                    format!("Volume: {:<2.2}%", get_vol(Arc::clone(&sink))),
+                    Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
+                ),
+            ]);
+
+            let block = Block::bordered()
                 .border_style(Style::default().fg(Color::from_str("#1F153E").unwrap()))
-                .title_top(format!("{}", current_dir.display()))
-                .title_bottom(match &playing_file {
-                    Some(file) => format!("Playing: {}", file),
-                    None => String::new(),
-                })
-                .title_style(Style::default().fg(Color::from_str("#00FFAA").unwrap()));
+                .border_set(border::THICK)
+                // top left
+                .title_top(
+                    Line::from(Span::styled(
+                        format!("{}", current_dir.display()),
+                        Style::default().fg(Color::from_str("#00FFAA").unwrap()),
+                    ))
+                    .left_aligned(),
+                )
+                // top right
+                .title_top(
+                    Line::from(Span::styled(
+                        format!("Playback speed: x{:<4}", play_speed),
+                        Style::default().fg(Color::from_str("#00FFAA").unwrap()),
+                    ))
+                    .right_aligned(),
+                )
+                // bottom left
+                .title_bottom(Line::from(match &playing_file {
+                    Some(file) => Span::styled(
+                        format!("Playing: {}", file),
+                        Style::default().fg(Color::from_str("#F1FF5D").unwrap()),
+                    ),
+                    None => String::new().into(),
+                }))
+                .title_bottom(bottom.right_aligned());
 
             let list = List::new(items)
                 .block(block)
                 .highlight_style(Style::default().fg(Color::from_str("#00EAFF").unwrap()));
+
             f.render_stateful_widget(list, size, &mut list_state);
         })?;
 
@@ -124,7 +172,35 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => break,
-                    KeyCode::Down => {
+
+                    // play selected file
+                    KeyCode::Enter => {
+                        if let Some(path) = entries.get(selected) {
+                            let stream_handle_clone = stream_handle.clone();
+                            let sink_clone = Arc::clone(&sink);
+                            let path_clone = path.clone();
+                            thread::spawn(move || {
+                                play_file(path_clone, stream_handle_clone, sink_clone);
+                            });
+                            playing_file = path
+                                .file_name()
+                                .map(|name| name.to_string_lossy().to_string());
+                        }
+                        play_speed = 1.0; // Reset speed when new song is played
+                        muted = false;
+                        paused = false;
+                        // TODO: fix volume not persisting
+                        set_vol(Arc::clone(&sink), vol);
+                    }
+
+                    // file system movement
+                    KeyCode::Left | KeyCode::Char('h') => {
+                        if let Some(parent) = current_dir.parent() {
+                            selected = *sel_map.get(parent).unwrap_or(&0);
+                            current_dir = parent.to_path_buf();
+                        }
+                    }
+                    KeyCode::Down | KeyCode::Char('j') => {
                         if selected < entries.len() - 1 {
                             selected += 1;
                         } else {
@@ -132,7 +208,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         sel_map.insert(current_dir.clone(), selected);
                     }
-                    KeyCode::Up => {
+                    KeyCode::Up | KeyCode::Char('k') => {
                         if selected == 0 {
                             selected = entries.len() - 1;
                         } else {
@@ -140,20 +216,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         sel_map.insert(current_dir.clone(), selected);
                     }
-                    KeyCode::Enter => {
-                        if let Some(path) = entries.get(selected) {
-                            let stream_handle_clone = stream_handle.clone();
-                            let sink_clone = Arc::clone(&sink);
-                            let path_clone = path.clone();
-                            thread::spawn(move || {
-                                play_flac_file(path_clone, stream_handle_clone, sink_clone);
-                            });
-                            playing_file = path
-                                .file_name()
-                                .map(|name| name.to_string_lossy().to_string());
-                        }
-                    }
-                    KeyCode::Right => {
+                    KeyCode::Right | KeyCode::Char('l') => {
                         if let Some(path) = entries.get(selected) {
                             if path.is_dir() {
                                 selected = *sel_map.get(path).unwrap_or(&0);
@@ -161,23 +224,72 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     }
-                    KeyCode::Left => {
-                        if let Some(parent) = current_dir.parent() {
-                            selected = *sel_map.get(parent).unwrap_or(&0);
-                            current_dir = parent.to_path_buf();
+
+                    // playback speed
+                    KeyCode::Char(',') | KeyCode::Char('<') => {
+                        if play_speed == 0.25 {
+                            continue;
+                        } else {
+                            play_speed -= 0.25;
                         }
+                        set_play_speed(Arc::clone(&sink), play_speed);
                     }
-                    KeyCode::Char('p') => {
-                        toggle_play_pause(Arc::clone(&sink));
-                    }
-                    KeyCode::Char(',') => {
-                        set_play_speed(Arc::clone(&sink), 0.75);
-                    }
-                    KeyCode::Char('.') => {
-                        set_play_speed(Arc::clone(&sink), 1.0);
+                    KeyCode::Char('.') | KeyCode::Char('>') => {
+                        if play_speed == 2.0 {
+                            continue;
+                        } else {
+                            play_speed += 0.25;
+                        }
+                        set_play_speed(Arc::clone(&sink), play_speed);
                     }
                     KeyCode::Char('/') => {
-                        set_play_speed(Arc::clone(&sink), 1.5);
+                        play_speed = 1.0;
+                        set_play_speed(Arc::clone(&sink), play_speed);
+                    }
+
+                    // mute
+                    KeyCode::Char('m') => match muted {
+                        false => {
+                            set_vol(Arc::clone(&sink), 0.0);
+                            muted = true;
+                        }
+                        true => {
+                            set_vol(Arc::clone(&sink), vol);
+                            muted = false;
+                        }
+                    },
+
+                    // play/pause
+                    KeyCode::Char('p') => {
+                        match paused {
+                            true => {
+                                paused = false;
+                            }
+                            false => {
+                                paused = true;
+                            }
+                        }
+                        toggle_play_pause(Arc::clone(&sink));
+                    }
+
+                    // volume
+                    KeyCode::Char('-') | KeyCode::Char('_') => {
+                        if vol <= 0.0 {
+                            vol = 0.0;
+                            continue;
+                        } else {
+                            vol -= 0.05;
+                        }
+                        set_vol(Arc::clone(&sink), vol);
+                    }
+                    KeyCode::Char('=') | KeyCode::Char('+') => {
+                        if vol >= 1.0 {
+                            vol = 1.0;
+                            continue;
+                        } else {
+                            vol += 0.05;
+                        }
+                        set_vol(Arc::clone(&sink), vol);
                     }
                     _ => {}
                 }
