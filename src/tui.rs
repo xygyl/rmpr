@@ -139,16 +139,12 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     KeyCode::Enter => {
                         if let Some(path) = entries.get(selected) {
-                            if let Some(ext) = path.extension() {
-                                if ext.to_string_lossy() == "flac" {
-                                    let stream_handle_clone = stream_handle.clone();
-                                    let sink_clone = Arc::clone(&sink);
-                                    let path_clone = path.clone();
-                                    thread::spawn(move || {
-                                        play_flac_file(path_clone, stream_handle_clone, sink_clone);
-                                    });
-                                }
-                            }
+                            let stream_handle_clone = stream_handle.clone();
+                            let sink_clone = Arc::clone(&sink);
+                            let path_clone = path.clone();
+                            thread::spawn(move || {
+                                play_flac_file(path_clone, stream_handle_clone, sink_clone);
+                            });
                         }
                     }
                     KeyCode::Right => {
