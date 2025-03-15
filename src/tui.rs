@@ -165,7 +165,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                             current_dir = parent.to_path_buf();
                         }
                     }
-                    KeyCode::Char(' ') => {
+                    KeyCode::Char('p') => {
                         toggle_play_pause(Arc::clone(&sink));
                     }
                     KeyCode::Char(',') => {
