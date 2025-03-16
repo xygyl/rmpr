@@ -112,7 +112,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 ),
                 Span::styled(
                     " | ",
-                    Style::default().fg(Color::from_str("#00ffaa").unwrap()),
+                    Style::default().fg(Color::from_str("#00FFAA").unwrap()),
                 ),
                 Span::styled(
                     format!("Muted: {:>5}", muted),
@@ -120,14 +120,10 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 ),
                 Span::styled(
                     " | ",
-                    Style::default().fg(Color::from_str("#00ffaa").unwrap()),
+                    Style::default().fg(Color::from_str("#00FFAA").unwrap()),
                 ),
-                // Span::styled(
-                //     format!("Volume: {:<2.2}%", vol),
-                //     Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
-                // ),
                 Span::styled(
-                    format!("Volume: {:<2.2}%", get_vol(Arc::clone(&sink))),
+                    format!("Volume: {:>3.2}%", get_vol(Arc::clone(&sink))),
                     Style::default().fg(Color::from_str("#FF5D85").unwrap()),
                 ),
             ]);

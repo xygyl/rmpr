@@ -20,7 +20,6 @@ pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedS
     *sink.lock().unwrap() = Some(new_sink);
 }
 
-/// Toggles play/pause for the current audio sink.
 pub fn toggle_play_pause(sink: SharedSink) {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
@@ -32,7 +31,6 @@ pub fn toggle_play_pause(sink: SharedSink) {
     }
 }
 
-/// Sets the playback speed.
 pub fn set_play_speed(sink: SharedSink, mag: f32) {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
@@ -46,11 +44,11 @@ pub fn set_vol(sink: SharedSink, mag: f32) {
         sink.set_volume(mag);
     }
 }
-pub fn get_vol(sink: SharedSink) -> f32 {
+pub fn get_vol(sink: SharedSink) -> u8 {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
-        sink.volume()
+        (sink.volume() * 100.0).round() as u8
     } else {
-        1.0
+        100
     }
 }
