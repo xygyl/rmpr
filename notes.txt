@@ -1,1 +1,7 @@
-1. Add vol parameter to play_file() for persistent volume
+1. volume rounding issue {
+	1. volume is 15
+	2. press '-' four times
+	3. volume displays 0, but audio plays
+
+	convert int to f32?
+}

@@ -38,6 +38,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     let mut muted: bool = false;
 
     let mut playing_file: Option<String> = None;
+
     let mut sel_map: HashMap<PathBuf, usize> = HashMap::new();
     sel_map.insert(current_dir.clone(), 0);
 
@@ -176,7 +177,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                             let sink_clone = Arc::clone(&sink);
                             let path_clone = path.clone();
                             thread::spawn(move || {
-                                play_file(path_clone, stream_handle_clone, sink_clone);
+                                play_file(path_clone, stream_handle_clone, sink_clone, vol);
                             });
                             playing_file = path
                                 .file_name()
@@ -185,8 +186,6 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                         play_speed = 1.0; // Reset speed when new song is played
                         muted = false;
                         paused = false;
-                        // TODO: fix volume not persisting
-                        set_vol(Arc::clone(&sink), vol);
                     }
 
                     // file system movement
@@ -270,7 +269,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
                     // volume
                     KeyCode::Char('-') | KeyCode::Char('_') => {
-                        if vol <= 0.0 {
+                        if vol < 0.0 {
                             vol = 0.0;
                             continue;
                         } else {
@@ -296,5 +295,6 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
+    println!("{}", vol);
     Ok(())
 }

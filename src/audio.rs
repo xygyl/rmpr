@@ -8,16 +8,18 @@ use std::sync::{Arc, Mutex};
 pub type SharedSink = Arc<Mutex<Option<Sink>>>;
 
 /// Plays a FLAC file on a separate thread.
-pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedSink) {
+pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedSink, vol: f32) {
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
     let source = Decoder::new(reader).unwrap();
-    let new_sink = Sink::try_new(&stream_handle).unwrap();
 
+    let new_sink = Sink::try_new(&stream_handle).unwrap();
     new_sink.append(source);
 
     // Store the sink in shared state
     *sink.lock().unwrap() = Some(new_sink);
+
+    set_vol(Arc::clone(&sink), vol);
 }
 
 pub fn toggle_play_pause(sink: SharedSink) {
