@@ -128,7 +128,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 // ),
                 Span::styled(
                     format!("Volume: {:<2.2}%", get_vol(Arc::clone(&sink))),
-                    Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
+                    Style::default().fg(Color::from_str("#FF5D85").unwrap()),
                 ),
             ]);
 
@@ -147,7 +147,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 .title_top(
                     Line::from(Span::styled(
                         format!("Playback speed: x{:<4}", play_speed),
-                        Style::default().fg(Color::from_str("#FF5D85").unwrap()),
+                        Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
                     ))
                     .right_aligned(),
                 )
