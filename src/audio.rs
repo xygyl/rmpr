@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 pub type SharedSink = Arc<Mutex<Option<Sink>>>;
 
 /// Plays a FLAC file on a separate thread.
-pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedSink, vol: f32) {
+pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedSink, vol: u8) {
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
     let source = Decoder::new(reader).unwrap();
@@ -21,6 +21,8 @@ pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedS
 
     set_vol(Arc::clone(&sink), vol);
 }
+
+// TODO: add a function to add songs to sink queue and a way to display that at the bottom left of tui
 
 pub fn toggle_play_pause(sink: SharedSink) {
     let sink_guard = sink.lock().unwrap();
@@ -40,17 +42,26 @@ pub fn set_play_speed(sink: SharedSink, mag: f32) {
     }
 }
 
-pub fn set_vol(sink: SharedSink, mag: f32) {
+pub fn set_vol(sink: SharedSink, mag: u8) {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
-        sink.set_volume(mag);
+        sink.set_volume((mag as f32) / 100.0);
     }
 }
-pub fn get_vol(sink: SharedSink) -> u8 {
+/* pub fn get_vol(sink: SharedSink) -> u8 {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
         (sink.volume() * 100.0).round() as u8
     } else {
         100
+    }
+} */
+
+pub fn get_len(sink: SharedSink) -> usize {
+    let sink_guard = sink.lock().unwrap();
+    if let Some(sink) = &*sink_guard {
+        sink.len()
+    } else {
+        0
     }
 }

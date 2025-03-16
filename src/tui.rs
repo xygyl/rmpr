@@ -1,4 +1,4 @@
-use crate::audio::{get_vol, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
+use crate::audio::{get_len, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
 // use audiotags::Tag;
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -33,7 +33,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     list_state.select(Some(selected));
 
     let mut play_speed: f32 = 1.0;
-    let mut vol: f32 = 1.0;
+    let mut vol: u8 = 100; // (u8 as f32) instead of just f32 to prevent underflow
     let mut paused: bool = false;
     let mut muted: bool = false;
 
@@ -124,7 +124,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                     Style::default().fg(Color::from_str("#00FFAA").unwrap()),
                 ),
                 Span::styled(
-                    format!("Volume: {:>3.2}%", get_vol(Arc::clone(&sink))),
+                    format!("Volume: {:>3.2}%", vol),
                     Style::default().fg(Color::from_str("#FF5D85").unwrap()),
                 ),
             ]);
@@ -183,17 +183,19 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                                 .file_name()
                                 .map(|name| name.to_string_lossy().to_string());
                         }
-                        play_speed = 1.0; // Reset speed when new song is played
+                        play_speed = 1.0; // Reset *displayed* speed when new song is played. Speed will always be internally set to 1.0 when a new song is played
                         muted = false;
                         paused = false;
                     }
 
                     // file system movement
-                    KeyCode::Left | KeyCode::Char('h') => {
-                        if let Some(parent) = current_dir.parent() {
-                            selected = *sel_map.get(parent).unwrap_or(&0);
-                            current_dir = parent.to_path_buf();
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        if selected == 0 {
+                            selected = entries.len() - 1;
+                        } else {
+                            selected -= 1;
                         }
+                        sel_map.insert(current_dir.clone(), selected);
                     }
                     KeyCode::Down | KeyCode::Char('j') => {
                         if selected < entries.len() - 1 {
@@ -203,13 +205,11 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         sel_map.insert(current_dir.clone(), selected);
                     }
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        if selected == 0 {
-                            selected = entries.len() - 1;
-                        } else {
-                            selected -= 1;
+                    KeyCode::Left | KeyCode::Char('h') => {
+                        if let Some(parent) = current_dir.parent() {
+                            selected = *sel_map.get(parent).unwrap_or(&0);
+                            current_dir = parent.to_path_buf();
                         }
-                        sel_map.insert(current_dir.clone(), selected);
                     }
                     KeyCode::Right | KeyCode::Char('l') => {
                         if let Some(path) = entries.get(selected) {
@@ -245,7 +245,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                     // mute
                     KeyCode::Char('m') => match muted {
                         false => {
-                            set_vol(Arc::clone(&sink), 0.0);
+                            set_vol(Arc::clone(&sink), 0);
                             muted = true;
                         }
                         true => {
@@ -269,22 +269,20 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
                     // volume
                     KeyCode::Char('-') | KeyCode::Char('_') => {
-                        if vol < 0.0 {
-                            vol = 0.0;
+                        if vol == 0 || get_len(Arc::clone(&sink)) == 0 {
                             continue;
                         } else {
-                            vol -= 0.05;
+                            vol -= 5;
+                            set_vol(Arc::clone(&sink), vol);
                         }
-                        set_vol(Arc::clone(&sink), vol);
                     }
                     KeyCode::Char('=') | KeyCode::Char('+') => {
-                        if vol >= 1.0 {
-                            vol = 1.0;
+                        if vol == 100 || get_len(Arc::clone(&sink)) == 0 {
                             continue;
                         } else {
-                            vol += 0.05;
+                            vol += 5;
+                            set_vol(Arc::clone(&sink), vol);
                         }
-                        set_vol(Arc::clone(&sink), vol);
                     }
                     _ => {}
                 }
@@ -295,6 +293,5 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
-    println!("{}", vol);
     Ok(())
 }
