@@ -147,7 +147,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 .title_top(
                     Line::from(Span::styled(
                         format!("Playback speed: x{:<4}", play_speed),
-                        Style::default().fg(Color::from_str("#00FFAA").unwrap()),
+                        Style::default().fg(Color::from_str("#FF5D85").unwrap()),
                     ))
                     .right_aligned(),
                 )
