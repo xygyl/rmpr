@@ -1,297 +1,152 @@
-use crate::audio::{get_len, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
-// use audiotags::Tag;
+use crate::audio_playing::AudioPlaying;
+use crate::browser::FileBrowser;
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::LeaveAlternateScreen,
 };
 use ratatui::{
-    backend::CrosstermBackend,
     style::{Color, Style},
     symbols::border,
     text::{Line, Span},
-    widgets::{Block, List, ListItem, ListState},
-    Terminal,
+    widgets::{Block, List},
+    DefaultTerminal, Frame,
 };
-use rodio::OutputStream;
-use std::{
-    collections::HashMap, env, fs, io, path::PathBuf, str::FromStr, sync::Arc, thread,
-    time::Duration,
-};
+use std::{env, io, path::PathBuf, str::FromStr};
 
-/// Runs the file browser and TUI event loop.
+/// Runs the TUI application
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = ratatui::init();
+    let current_dir = env::current_dir()?;
+    let mut app = App::new(current_dir)?;
+    let res = app.run(&mut terminal);
+    execute!(io::stdout(), LeaveAlternateScreen)?;
+    Ok(res?)
+}
 
-    let mut current_dir = env::current_dir()?;
-    let mut selected: usize = 0;
-    let mut list_state = ListState::default();
-    list_state.select(Some(selected));
+/// The main application
+pub struct App {
+    file_browser: FileBrowser,
+    audio: AudioPlaying,
+    exit: bool,
+}
 
-    let mut play_speed: u8 = 100; // (u8 as f32) for consistency with vol
-    let mut vol: u8 = 100; // (u8 as f32) instead of just f32 to prevent underflow
-    let mut paused: bool = false;
-    let mut muted: bool = false;
+impl App {
+    pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
+        Ok(Self {
+            file_browser: FileBrowser::new(initial_dir),
+            audio: AudioPlaying::new()?,
+            exit: false,
+        })
+    }
 
-    let mut playing_file: Option<String> = None;
-
-    let mut sel_map: HashMap<PathBuf, usize> = HashMap::new();
-    sel_map.insert(current_dir.clone(), 0);
-
-    // Shared output stream and sink for audio control
-    let (_stream, stream_handle) = OutputStream::try_default()?;
-    let sink: SharedSink = Arc::new(std::sync::Mutex::new(None));
-
-    loop {
-        let mut directories: Vec<PathBuf> = Vec::new();
-        let mut files: Vec<PathBuf> = Vec::new();
-
-        for entry in fs::read_dir(&current_dir)? {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if let Some(file_name) = path.file_name() {
-                    if file_name.to_string_lossy().starts_with('.') {
-                        continue;
-                    }
-                }
-                if path.is_dir() {
-                    directories.push(path);
-                } else {
-                    files.push(path);
-                }
-            }
+    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        while !self.exit {
+            self.file_browser.update_entries()?;
+            terminal.draw(|frame| self.draw(frame))?;
+            self.handle_events()?;
         }
+        Ok(())
+    }
 
-        directories.sort();
-        files.sort();
+    fn draw(&self, frame: &mut Frame) {
+        let size = frame.area();
 
-        let entries: Vec<PathBuf> = directories.into_iter().chain(files.into_iter()).collect();
+        let bottom_line = Line::from(vec![
+            Span::styled(
+                format!("Paused: {:>5}", self.audio.paused),
+                Style::default().fg(Color::from_str("#417BFF").unwrap()),
+            ),
+            Span::styled(
+                " | ",
+                Style::default().fg(Color::from_str("#00FFAA").unwrap()),
+            ),
+            Span::styled(
+                format!("Muted: {:>5}", self.audio.muted),
+                Style::default().fg(Color::from_str("#AE5DFF").unwrap()),
+            ),
+            Span::styled(
+                " | ",
+                Style::default().fg(Color::from_str("#00FFAA").unwrap()),
+            ),
+            Span::styled(
+                format!("Volume: {:>3.2}%", self.audio.vol),
+                Style::default().fg(Color::from_str("#FF5D85").unwrap()),
+            ),
+        ]);
 
-        let items: Vec<ListItem> = entries
-            .iter()
-            .map(|entry| {
-                let file_name = entry
-                    .file_name()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_else(|| String::from("Unknown"));
-
-                let is_dir = entry.is_dir();
-                let display = if is_dir {
-                    format!("{}", file_name)
-                } else {
-                    file_name
-                };
-
-                let style = if is_dir {
-                    Style::default().fg(Color::from_str("#6B5DFF").unwrap())
-                } else {
-                    Style::default().fg(Color::from_str("#F98771").unwrap())
-                };
-
-                ListItem::new(display).style(style)
-            })
-            .collect();
-
-        list_state.select(if entries.is_empty() {
-            None
-        } else {
-            Some(selected)
-        });
-
-        terminal.draw(|f| {
-            let size = f.area();
-
-            // bottom right
-            let bottom = Line::from(vec![
-                Span::styled(
-                    format!("Paused: {:>5}", paused),
-                    Style::default().fg(Color::from_str("#417BFF").unwrap()),
-                ),
-                Span::styled(
-                    " | ",
+        let block = Block::bordered()
+            .border_style(Style::default().fg(Color::from_str("#1F153E").unwrap()))
+            .border_set(border::THICK)
+            .title_top(
+                Line::from(Span::styled(
+                    format!("{}", self.file_browser.current_dir.display()),
                     Style::default().fg(Color::from_str("#00FFAA").unwrap()),
-                ),
-                Span::styled(
-                    format!("Muted: {:>5}", muted),
-                    Style::default().fg(Color::from_str("#AE5DFF").unwrap()),
-                ),
-                Span::styled(
-                    " | ",
-                    Style::default().fg(Color::from_str("#00FFAA").unwrap()),
-                ),
-                Span::styled(
-                    format!("Volume: {:>3.2}%", vol),
-                    Style::default().fg(Color::from_str("#FF5D85").unwrap()),
-                ),
-            ]);
-
-            let block = Block::bordered()
-                .border_style(Style::default().fg(Color::from_str("#1F153E").unwrap()))
-                .border_set(border::THICK)
-                // top left
-                .title_top(
-                    Line::from(Span::styled(
-                        format!("{}", current_dir.display()),
-                        Style::default().fg(Color::from_str("#00FFAA").unwrap()),
-                    ))
-                    .left_aligned(),
-                )
-                // top right
-                .title_top(
-                    Line::from(Span::styled(
-                        format!("Playback speed: x{:<4}", (play_speed as f32) / 100.0),
-                        Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
-                    ))
-                    .right_aligned(),
-                )
-                // bottom left
-                .title_bottom(Line::from(match &playing_file {
+                ))
+                .left_aligned(),
+            )
+            .title_top(
+                Line::from(Span::styled(
+                    format!(
+                        "Playback speed: x{:<4}",
+                        (self.audio.play_speed as f32) / 100.0
+                    ),
+                    Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
+                ))
+                .right_aligned(),
+            )
+            .title_bottom(
+                Line::from(match &self.audio.playing_file {
                     Some(file) => Span::styled(
                         format!("Playing: {}", file),
                         Style::default().fg(Color::from_str("#F1FF5D").unwrap()),
                     ),
-                    None => String::new().into(),
-                }))
-                .title_bottom(bottom.right_aligned());
+                    None => Span::raw(""),
+                })
+                .left_aligned(),
+            )
+            .title_bottom(bottom_line.right_aligned());
 
-            let list = List::new(items)
-                .block(block)
-                .highlight_style(Style::default().fg(Color::from_str("#00EAFF").unwrap()));
+        let items = self.file_browser.list_items();
+        let list = List::new(items)
+            .block(block)
+            .highlight_style(Style::default().fg(Color::from_str("#00EAFF").unwrap()));
 
-            f.render_stateful_widget(list, size, &mut list_state);
-        })?;
-
-        if event::poll(Duration::from_millis(200))? {
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char('q') => break,
-
-                    // play selected file
-                    KeyCode::Enter => {
-                        if let Some(path) = entries.get(selected) {
-                            let path_clone = path.clone();
-                            let stream_handle_clone = stream_handle.clone();
-                            let sink_clone = Arc::clone(&sink);
-                            thread::spawn(move || {
-                                play_file(path_clone, stream_handle_clone, sink_clone, vol);
-                            });
-                            playing_file = path
-                                .file_name()
-                                .map(|name| name.to_string_lossy().to_string());
-                        }
-                        play_speed = 100; // Reset *displayed* speed when new song is played. Speed will always be internally set to 1.0 when a new song is played
-                        muted = false;
-                        paused = false;
-                    }
-
-                    // file system movement
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        if selected == 0 {
-                            selected = entries.len() - 1;
-                        } else {
-                            selected -= 1;
-                        }
-                        sel_map.insert(current_dir.clone(), selected);
-                    }
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        if selected < entries.len() - 1 {
-                            selected += 1;
-                        } else {
-                            selected = 0;
-                        }
-                        sel_map.insert(current_dir.clone(), selected);
-                    }
-                    KeyCode::Left | KeyCode::Char('h') => {
-                        if let Some(parent) = current_dir.parent() {
-                            selected = *sel_map.get(parent).unwrap_or(&0);
-                            current_dir = parent.to_path_buf();
-                        }
-                    }
-                    KeyCode::Right | KeyCode::Char('l') => {
-                        if let Some(path) = entries.get(selected) {
-                            if path.is_dir() {
-                                selected = *sel_map.get(path).unwrap_or(&0);
-                                current_dir = path.clone();
-                            }
-                        }
-                    }
-
-                    // playback speed
-                    KeyCode::Char(',') | KeyCode::Char('<') => {
-                        if play_speed == 25 {
-                            continue;
-                        } else {
-                            play_speed -= 25;
-                        }
-                        set_play_speed(Arc::clone(&sink), play_speed);
-                    }
-                    KeyCode::Char('.') | KeyCode::Char('>') => {
-                        if play_speed == 200 {
-                            continue;
-                        } else {
-                            play_speed += 25;
-                        }
-                        set_play_speed(Arc::clone(&sink), play_speed);
-                    }
-                    KeyCode::Char('/') => {
-                        play_speed = 100;
-                        set_play_speed(Arc::clone(&sink), play_speed);
-                    }
-
-                    // mute
-                    KeyCode::Char('m') => match muted {
-                        false => {
-                            set_vol(Arc::clone(&sink), 0);
-                            muted = true;
-                        }
-                        true => {
-                            set_vol(Arc::clone(&sink), vol);
-                            muted = false;
-                        }
-                    },
-
-                    // play/pause
-                    KeyCode::Char('p') => {
-                        match paused {
-                            true => {
-                                paused = false;
-                            }
-                            false => {
-                                paused = true;
-                            }
-                        }
-                        toggle_play_pause(Arc::clone(&sink));
-                    }
-
-                    // volume
-                    KeyCode::Char('-') | KeyCode::Char('_') => {
-                        if vol == 0 || get_len(Arc::clone(&sink)) == 0 {
-                            continue;
-                        } else {
-                            vol -= 5;
-                            set_vol(Arc::clone(&sink), vol);
-                        }
-                    }
-                    KeyCode::Char('=') | KeyCode::Char('+') => {
-                        if vol == 100 || get_len(Arc::clone(&sink)) == 0 {
-                            continue;
-                        } else {
-                            vol += 5;
-                            set_vol(Arc::clone(&sink), vol);
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
+        frame.render_stateful_widget(list, size, &mut self.file_browser.list_state.clone());
     }
 
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
+    fn handle_events(&mut self) -> io::Result<()> {
+        match event::read()? {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                self.handle_key_event(key_event)
+            }
+            _ => {}
+        };
+        Ok(())
+    }
+
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char('q') => self.exit = true,
+            KeyCode::Enter => {
+                if let Some(path) = self.file_browser.entries.get(self.file_browser.selected) {
+                    if !path.is_dir() {
+                        self.audio.play(path);
+                    }
+                }
+            }
+            KeyCode::Up | KeyCode::Char('k') => self.file_browser.navigate_up(),
+            KeyCode::Down | KeyCode::Char('j') => self.file_browser.navigate_down(),
+            KeyCode::Left | KeyCode::Char('h') => self.file_browser.navigate_back(),
+            KeyCode::Right | KeyCode::Char('l') => self.file_browser.navigate_into(),
+            KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(-25),
+            KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(25),
+            KeyCode::Char('/') => self.audio.reset_speed(),
+            KeyCode::Char('m') => self.audio.toggle_mute(),
+            KeyCode::Char('p') => self.audio.toggle_pause(),
+            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(-5),
+            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(5),
+            _ => {}
+        }
+    }
 }
