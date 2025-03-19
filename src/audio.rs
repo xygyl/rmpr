@@ -1,8 +1,10 @@
 use rodio::{Decoder, OutputStreamHandle, Sink};
-use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::{
+    fs::File,
+    io::BufReader,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 /// Shared sink type to control audio playback.
 pub type SharedSink = Arc<Mutex<Option<Sink>>>;
