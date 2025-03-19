@@ -35,10 +35,10 @@ pub fn toggle_play_pause(sink: SharedSink) {
     }
 }
 
-pub fn set_play_speed(sink: SharedSink, mag: f32) {
+pub fn set_play_speed(sink: SharedSink, mag: u8) {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
-        sink.set_speed(mag);
+        sink.set_speed((mag as f32) / 100.0);
     }
 }
 

@@ -32,7 +32,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     let mut list_state = ListState::default();
     list_state.select(Some(selected));
 
-    let mut play_speed: f32 = 1.0;
+    let mut play_speed: u8 = 100; // (u8 as f32) for consistency with vol
     let mut vol: u8 = 100; // (u8 as f32) instead of just f32 to prevent underflow
     let mut paused: bool = false;
     let mut muted: bool = false;
@@ -143,7 +143,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                 // top right
                 .title_top(
                     Line::from(Span::styled(
-                        format!("Playback speed: x{:<4}", play_speed),
+                        format!("Playback speed: x{:<4}", (play_speed as f32) / 100.0),
                         Style::default().fg(Color::from_str("#FF5DC8").unwrap()),
                     ))
                     .right_aligned(),
@@ -173,9 +173,9 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                     // play selected file
                     KeyCode::Enter => {
                         if let Some(path) = entries.get(selected) {
+                            let path_clone = path.clone();
                             let stream_handle_clone = stream_handle.clone();
                             let sink_clone = Arc::clone(&sink);
-                            let path_clone = path.clone();
                             thread::spawn(move || {
                                 play_file(path_clone, stream_handle_clone, sink_clone, vol);
                             });
@@ -183,7 +183,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
                                 .file_name()
                                 .map(|name| name.to_string_lossy().to_string());
                         }
-                        play_speed = 1.0; // Reset *displayed* speed when new song is played. Speed will always be internally set to 1.0 when a new song is played
+                        play_speed = 100; // Reset *displayed* speed when new song is played. Speed will always be internally set to 1.0 when a new song is played
                         muted = false;
                         paused = false;
                     }
@@ -222,23 +222,23 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
                     // playback speed
                     KeyCode::Char(',') | KeyCode::Char('<') => {
-                        if play_speed == 0.25 {
+                        if play_speed == 25 {
                             continue;
                         } else {
-                            play_speed -= 0.25;
+                            play_speed -= 25;
                         }
                         set_play_speed(Arc::clone(&sink), play_speed);
                     }
                     KeyCode::Char('.') | KeyCode::Char('>') => {
-                        if play_speed == 2.0 {
+                        if play_speed == 200 {
                             continue;
                         } else {
-                            play_speed += 0.25;
+                            play_speed += 25;
                         }
                         set_play_speed(Arc::clone(&sink), play_speed);
                     }
                     KeyCode::Char('/') => {
-                        play_speed = 1.0;
+                        play_speed = 100;
                         set_play_speed(Arc::clone(&sink), play_speed);
                     }
 
