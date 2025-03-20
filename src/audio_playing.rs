@@ -1,5 +1,6 @@
-use crate::audio::{get_len, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
-// use crate::audio::PlayAudio;
+use crate::sink_handling::{
+    get_len, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink,
+};
 use rodio::{OutputStream, OutputStreamHandle};
 use std::{path::PathBuf, sync::Arc, thread};
 
@@ -40,7 +41,7 @@ impl AudioPlaying {
             play_file(path_clone, stream_handle_clone, sink_clone, current_vol);
         });
         self.playing_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-        self.play_speed = 100; // reset playback speed
+        self.play_speed = 100;
         self.muted = false;
         self.paused = false;
     }
