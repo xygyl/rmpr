@@ -1124,6 +1124,7 @@ dependencies = [
  "crossterm",
  "ratatui",
  "rodio",
+ "serde",
  "symphonia",
  "toml",
 ]
