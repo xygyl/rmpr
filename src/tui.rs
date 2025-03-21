@@ -20,8 +20,8 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = env::current_dir()?;
     let mut app = App::new(current_dir)?;
     let res = app.run(&mut terminal);
-    disable_raw_mode()?;
     execute!(io::stdout(), LeaveAlternateScreen)?;
+    disable_raw_mode()?;
     terminal.show_cursor()?;
     Ok(res?)
 }
