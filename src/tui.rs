@@ -60,48 +60,48 @@ impl App {
             .expect(&format!("Failed to read config file at {}", config_path));
         let config_data: ConfigData = toml::from_str(&config).expect("Failed to parse TOML config");
 
-        let border = config_data.colors.border;
-        let currently_playing = config_data.colors.currently_playing;
-        let directory_path = config_data.colors.directory_path;
-        let highlight_color = config_data.colors.highlight_color;
-        let muted = config_data.colors.muted;
-        let paused = config_data.colors.paused;
-        let playback_speed = config_data.colors.playback_speed;
-        let separators = config_data.colors.separators;
-        let volume = config_data.colors.volume;
+        let border = config_data.colors.border.as_str();
+        let currently_playing = config_data.colors.currently_playing.as_str();
+        let directory_path = config_data.colors.directory_path.as_str();
+        let highlight_color = config_data.colors.highlight_color.as_str();
+        let muted = config_data.colors.muted.as_str();
+        let paused = config_data.colors.paused.as_str();
+        let playback_speed = config_data.colors.playback_speed.as_str();
+        let separators = config_data.colors.separators.as_str();
+        let volume = config_data.colors.volume.as_str();
 
         let size = frame.area();
 
         let bottom_line = Line::from(vec![
             Span::styled(
                 format!("Paused: {:>5}", self.audio.paused),
-                Style::default().fg(Color::from_str((paused).as_str()).unwrap()),
+                Style::default().fg(Color::from_str(paused).unwrap()),
             ),
             Span::styled(
                 " | ",
-                Style::default().fg(Color::from_str((separators).as_str()).unwrap()),
+                Style::default().fg(Color::from_str(separators).unwrap()),
             ),
             Span::styled(
                 format!("Muted: {:>5}", self.audio.muted),
-                Style::default().fg(Color::from_str((muted).as_str()).unwrap()),
+                Style::default().fg(Color::from_str(muted).unwrap()),
             ),
             Span::styled(
                 " | ",
-                Style::default().fg(Color::from_str((separators).as_str()).unwrap()),
+                Style::default().fg(Color::from_str(separators).unwrap()),
             ),
             Span::styled(
                 format!("Volume: {:>3.2}%", self.audio.vol),
-                Style::default().fg(Color::from_str((volume).as_str()).unwrap()),
+                Style::default().fg(Color::from_str(volume).unwrap()),
             ),
         ]);
 
         let block = Block::bordered()
-            .border_style(Style::default().fg(Color::from_str((border).as_str()).unwrap()))
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()))
             .border_set(border::THICK)
             .title_top(
                 Line::from(Span::styled(
                     format!("{}", self.file_browser.current_dir.display()),
-                    Style::default().fg(Color::from_str((directory_path).as_str()).unwrap()),
+                    Style::default().fg(Color::from_str(directory_path).unwrap()),
                 ))
                 .left_aligned(),
             )
@@ -111,7 +111,7 @@ impl App {
                         "Playback speed: x{:<4}",
                         (self.audio.play_speed as f32) / 100.0
                     ),
-                    Style::default().fg(Color::from_str((playback_speed).as_str()).unwrap()),
+                    Style::default().fg(Color::from_str(playback_speed).unwrap()),
                 ))
                 .right_aligned(),
             )
@@ -119,7 +119,7 @@ impl App {
                 Line::from(match &self.audio.playing_file {
                     Some(file) => Span::styled(
                         format!("Playing: {}", file),
-                        Style::default().fg(Color::from_str((currently_playing).as_str()).unwrap()),
+                        Style::default().fg(Color::from_str(currently_playing).unwrap()),
                     ),
                     None => Span::raw(""),
                 })
@@ -128,9 +128,9 @@ impl App {
             .title_bottom(bottom_line.right_aligned());
 
         let items = self.file_browser.list_items();
-        let list = List::new(items).block(block).highlight_style(
-            Style::default().fg(Color::from_str((highlight_color).as_str()).unwrap()),
-        );
+        let list = List::new(items)
+            .block(block)
+            .highlight_style(Style::default().fg(Color::from_str(highlight_color).unwrap()));
 
         frame.render_stateful_widget(list, size, &mut self.file_browser.list_state.clone());
     }

@@ -109,8 +109,8 @@ impl FileBrowser {
             .expect(&format!("Failed to read config file at {}", config_path));
         let config_data: ConfigData = toml::from_str(&config).expect("Failed to parse TOML config");
 
-        let filesystem_directory = config_data.colors.filesystem_directory;
-        let filesystem_file = config_data.colors.filesystem_file;
+        let filesystem_directory = config_data.colors.filesystem_directory.as_str();
+        let filesystem_file = config_data.colors.filesystem_file.as_str();
 
         self.entries
             .iter()
@@ -120,9 +120,9 @@ impl FileBrowser {
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_else(|| String::from("Unknown"));
                 let style = if entry.is_dir() {
-                    Style::default().fg(Color::from_str((filesystem_directory).as_str()).unwrap())
+                    Style::default().fg(Color::from_str(filesystem_directory).unwrap())
                 } else {
-                    Style::default().fg(Color::from_str((filesystem_file).as_str()).unwrap())
+                    Style::default().fg(Color::from_str(filesystem_file).unwrap())
                 };
                 ListItem::new(file_name).style(style)
             })
