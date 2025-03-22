@@ -161,11 +161,11 @@ impl App {
             KeyCode::Right | KeyCode::Char('l') => self.file_browser.navigate_into(),
             KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(-25),
             KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(25),
-            KeyCode::Char('/') => self.audio.reset_speed(),
-            KeyCode::Char('m') => self.audio.toggle_mute(),
-            KeyCode::Char('p') => self.audio.toggle_pause(),
             KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(-5),
             KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(5),
+            KeyCode::Char('p') => self.audio.toggle_pause(),
+            KeyCode::Char('m') => self.audio.toggle_mute(),
+            KeyCode::Char('/') => self.audio.reset_speed(),
             _ => {}
         }
     }
