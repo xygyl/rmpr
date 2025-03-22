@@ -4,15 +4,16 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct Colors {
     pub border: String,
-    pub directory_path: String,
-    pub playback_speed: String,
     pub currently_playing: String,
-    pub paused: String,
-    pub muted: String,
-    pub volume: String,
-    pub separators: String,
+    pub directory_path: String,
     pub filesystem_directory: String,
     pub filesystem_file: String,
+    pub highlight_color: String,
+    pub muted: String,
+    pub paused: String,
+    pub playback_speed: String,
+    pub separators: String,
+    pub volume: String,
 }
 
 #[derive(Deserialize)]
