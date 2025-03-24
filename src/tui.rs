@@ -109,13 +109,17 @@ impl App {
                 .right_aligned(),
             )
             .title_bottom(
-                Line::from(match &self.audio.playing_file {
-                    Some(file) => Span::styled(
-                        format!("Playing: {}", file),
-                        Style::default().fg(Color::from_str(&currently_playing).unwrap()),
+                Line::from(Span::styled(
+                    format!(
+                        "{}",
+                        self.audio
+                            .title
+                            .as_deref()
+                            .or_else(|| self.audio.playing_file.as_deref())
+                            .unwrap_or("")
                     ),
-                    None => Span::raw(""),
-                })
+                    Style::default().fg(Color::from_str(&currently_playing).unwrap()),
+                ))
                 .left_aligned(),
             )
             .title_bottom(bottom_line.right_aligned());
@@ -126,7 +130,7 @@ impl App {
             .highlight_style(Style::default().fg(Color::from_str(&highlight_color).unwrap()));
         let size = frame.area();
 
-        frame.render_stateful_widget(list, size, &mut self.file_browser.list_state.clone());
+        frame.render_stateful_widget(list, size, &mut self.file_browser.list_state.clone())
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
