@@ -32,32 +32,43 @@ impl FileBrowser {
     /// Refreshes the list of entries from the current directory
     pub fn update_entries(&mut self) -> io::Result<()> {
         let mut directories = Vec::new();
-        let mut files = Vec::new();
+        let mut playable_files = Vec::new();
+        let playable_exts = ["flac", "mp3", "wav", "ogg", "aiff"];
 
         for entry in fs::read_dir(&self.current_dir)? {
             if let Ok(entry) = entry {
                 let path = entry.path();
-                // Skip hidden files
                 if let Some(file_name) = path.file_name() {
                     if file_name.to_string_lossy().starts_with('.') {
                         continue;
                     }
                 }
+
                 if path.is_dir() {
                     directories.push(path);
-                } else {
-                    files.push(path);
+                } else if let Some(ext) = path.extension() {
+                    if playable_exts.contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref())
+                    {
+                        playable_files.push(path);
+                    }
                 }
             }
         }
+
         directories.sort();
-        files.sort();
-        self.entries = directories.into_iter().chain(files.into_iter()).collect();
+        playable_files.sort();
+
+        self.entries = directories
+            .into_iter()
+            .chain(playable_files.into_iter())
+            .collect();
+
         self.list_state.select(if self.entries.is_empty() {
             None
         } else {
             Some(self.selected)
         });
+
         Ok(())
     }
 
