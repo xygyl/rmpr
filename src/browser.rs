@@ -1,9 +1,9 @@
-use crate::config::ConfigData;
+use crate::config::load_config;
 use ratatui::{
     style::{Color, Style},
     widgets::{ListItem, ListState},
 };
-use std::{collections::HashMap, env, fs, io, path::PathBuf, str::FromStr};
+use std::{collections::HashMap, fs, io, path::PathBuf, str::FromStr};
 
 /// Encapsulates file system browsing state and behavior
 pub struct FileBrowser {
@@ -102,12 +102,7 @@ impl FileBrowser {
     }
 
     pub fn list_items(&self) -> Vec<ListItem> {
-        let home_dir = env::var("HOME").expect("Couldn't find home directory");
-        let config_path = format!("{}/.config/rmpr/config.toml", home_dir);
-
-        let config = fs::read_to_string(&config_path)
-            .expect(&format!("Failed to read config file at {}", config_path));
-        let config_data: ConfigData = toml::from_str(&config).expect("Failed to parse TOML config");
+        let config_data = load_config();
 
         let filesystem_directory = config_data.colors.filesystem_directory.as_str();
         let filesystem_file = config_data.colors.filesystem_file.as_str();

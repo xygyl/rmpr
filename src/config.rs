@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::{env, fs};
 
 #[derive(Deserialize)]
 #[serde(default)]
@@ -37,4 +38,14 @@ impl Default for Colors {
             volume: "#FFFFFF".to_string(),
         }
     }
+}
+
+pub fn load_config() -> ConfigData {
+    let home_dir = env::var("HOME").expect("Couldn't find home directory");
+    let config_path = format!("{}/.config/rmpr/config.toml", home_dir);
+
+    let config_content = fs::read_to_string(&config_path)
+        .unwrap_or_else(|_| panic!("Failed to read config file at {}", config_path));
+
+    toml::from_str(&config_content).unwrap_or_else(|_| panic!("Failed to parse TOML config"))
 }

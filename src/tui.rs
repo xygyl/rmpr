@@ -1,6 +1,5 @@
-use crate::audio_playing::AudioPlaying;
 use crate::browser::FileBrowser;
-use crate::config::ConfigData;
+use crate::{audio_playing::AudioPlaying, config::load_config};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute,
@@ -13,7 +12,7 @@ use ratatui::{
     widgets::{Block, List},
     DefaultTerminal, Frame,
 };
-use std::{env, fs, io, path::PathBuf, str::FromStr};
+use std::{env, io, path::PathBuf, str::FromStr};
 
 /// Runs the TUI application
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
@@ -53,12 +52,7 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let home_dir = env::var("HOME").expect("Couldn't find home directory");
-        let config_path = format!("{}/.config/rmpr/config.toml", home_dir);
-
-        let config = fs::read_to_string(&config_path)
-            .expect(&format!("Failed to read config file at {}", config_path));
-        let config_data: ConfigData = toml::from_str(&config).expect("Failed to parse TOML config");
+        let config_data = load_config();
 
         let border = config_data.colors.border;
         let currently_playing = config_data.colors.currently_playing;
@@ -69,8 +63,6 @@ impl App {
         let playback_speed = config_data.colors.playback_speed;
         let separators = config_data.colors.separators;
         let volume = config_data.colors.volume;
-
-        let size = frame.area();
 
         let bottom_line = Line::from(vec![
             Span::styled(
@@ -131,6 +123,7 @@ impl App {
         let list = List::new(items)
             .block(block)
             .highlight_style(Style::default().fg(Color::from_str(&highlight_color).unwrap()));
+        let size = frame.area();
 
         frame.render_stateful_widget(list, size, &mut self.file_browser.list_state.clone());
     }
