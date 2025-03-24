@@ -13,7 +13,8 @@ pub struct Colors {
     pub muted: String,
     pub paused: String,
     pub playback_speed: String,
-    pub separators: String,
+    pub separator_left: String,
+    pub separator_right: String,
     pub volume: String,
 }
 
@@ -34,7 +35,8 @@ impl Default for Colors {
             muted: "#FFFFFF".to_string(),
             paused: "#FFFFFF".to_string(),
             playback_speed: "#0000FF".to_string(),
-            separators: "#FFFFFF".to_string(),
+            separator_left: "#FF0000".to_string(),
+            separator_right: "#FF0000".to_string(),
             volume: "#FFFFFF".to_string(),
         }
     }

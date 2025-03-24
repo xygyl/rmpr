@@ -61,7 +61,8 @@ impl App {
         let muted = config_data.colors.muted;
         let paused = config_data.colors.paused;
         let playback_speed = config_data.colors.playback_speed;
-        let separators = config_data.colors.separators;
+        let separator_left = config_data.colors.separator_left;
+        let separator_right = config_data.colors.separator_right;
         let volume = config_data.colors.volume;
 
         let bottom_line = Line::from(vec![
@@ -71,7 +72,7 @@ impl App {
             ),
             Span::styled(
                 " | ",
-                Style::default().fg(Color::from_str(&separators).unwrap()),
+                Style::default().fg(Color::from_str(&separator_left).unwrap()),
             ),
             Span::styled(
                 format!("Muted: {:>5}", self.audio.muted),
@@ -79,7 +80,7 @@ impl App {
             ),
             Span::styled(
                 " | ",
-                Style::default().fg(Color::from_str(&separators).unwrap()),
+                Style::default().fg(Color::from_str(&separator_right).unwrap()),
             ),
             Span::styled(
                 format!("Volume: {:>3.2}%", self.audio.vol),
