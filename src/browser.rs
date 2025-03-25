@@ -33,7 +33,7 @@ impl FileBrowser {
     pub fn update_entries(&mut self) -> io::Result<()> {
         let mut directories = Vec::new();
         let mut playable_files = Vec::new();
-        let playable_exts = ["flac", "mp3", "wav", "ogg", "aiff"];
+        let playable_exts = ["flac", "mp3", "wav"];
 
         for entry in fs::read_dir(&self.current_dir)? {
             if let Ok(entry) = entry {

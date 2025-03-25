@@ -61,76 +61,77 @@ impl App {
         let muted = config_data.colors.muted;
         let paused = config_data.colors.paused;
         let playback_speed = config_data.colors.playback_speed;
-        let separator_left = config_data.colors.separator_left;
-        let separator_right = config_data.colors.separator_right;
         let volume = config_data.colors.volume;
 
-        let bottom_line = Line::from(vec![
+        let top_left = Line::from(vec![
+            Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!("Paused: {:>5}", self.audio.paused),
+                format!("{}", self.file_browser.current_dir.display()),
+                Style::default().fg(Color::from_str(&directory_path).unwrap()),
+            ),
+            Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
+        ]);
+
+        let top_right = Line::from(vec![
+            Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!("x{:<4}", (self.audio.play_speed as f32) / 100.0),
+                Style::default().fg(Color::from_str(&playback_speed).unwrap()),
+            ),
+            Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
+        ]);
+
+        let bottom_left = Line::from(vec![
+            Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!(
+                    "{}",
+                    self.audio
+                        .title
+                        .as_deref()
+                        .or_else(|| self.audio.raw_file.as_deref())
+                        .unwrap_or("")
+                ),
+                Style::default().fg(Color::from_str(&currently_playing).unwrap()),
+            ),
+            Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
+        ]);
+
+        let bottom_right = Line::from(vec![
+            Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!("{}", if self.audio.paused { "P" } else { "-" }),
                 Style::default().fg(Color::from_str(&paused).unwrap()),
             ),
             Span::styled(
-                " | ",
-                Style::default().fg(Color::from_str(&separator_left).unwrap()),
-            ),
-            Span::styled(
-                format!("Muted: {:>5}", self.audio.muted),
+                format!("{}", if self.audio.muted { "M" } else { "-" }),
                 Style::default().fg(Color::from_str(&muted).unwrap()),
             ),
+            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                " | ",
-                Style::default().fg(Color::from_str(&separator_right).unwrap()),
-            ),
-            Span::styled(
-                format!("Volume: {:>3.2}%", self.audio.vol),
+                format!("{:>3.2}%", self.audio.vol),
                 Style::default().fg(Color::from_str(&volume).unwrap()),
             ),
+            Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
         let block = Block::bordered()
             .border_style(Style::default().fg(Color::from_str(&border).unwrap()))
             .border_set(border::THICK)
-            .title_top(
-                Line::from(Span::styled(
-                    format!("{}", self.file_browser.current_dir.display()),
-                    Style::default().fg(Color::from_str(&directory_path).unwrap()),
-                ))
-                .left_aligned(),
-            )
-            .title_top(
-                Line::from(Span::styled(
-                    format!(
-                        "Playback speed: x{:<4}",
-                        (self.audio.play_speed as f32) / 100.0
-                    ),
-                    Style::default().fg(Color::from_str(&playback_speed).unwrap()),
-                ))
-                .right_aligned(),
-            )
-            .title_bottom(
-                Line::from(Span::styled(
-                    format!(
-                        "{}",
-                        self.audio
-                            .title
-                            .as_deref()
-                            .or_else(|| self.audio.playing_file.as_deref())
-                            .unwrap_or("")
-                    ),
-                    Style::default().fg(Color::from_str(&currently_playing).unwrap()),
-                ))
-                .left_aligned(),
-            )
-            .title_bottom(bottom_line.right_aligned());
+            .title_top(top_left.left_aligned())
+            .title_top(top_right.right_aligned())
+            .title_bottom(bottom_left.left_aligned())
+            .title_bottom(bottom_right.right_aligned());
 
-        let items = self.file_browser.list_items();
-        let list = List::new(items)
+        let list = List::new(self.file_browser.list_items())
             .block(block)
             .highlight_style(Style::default().fg(Color::from_str(&highlight_color).unwrap()));
-        let size = frame.area();
 
-        frame.render_stateful_widget(list, size, &mut self.file_browser.list_state.clone())
+        frame.render_stateful_widget(
+            list,
+            frame.area(),
+            &mut self.file_browser.list_state.clone(),
+        )
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -146,6 +147,7 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
+
             KeyCode::Enter => {
                 if let Some(path) = self.file_browser.entries.get(self.file_browser.selected) {
                     if !path.is_dir() {
@@ -153,17 +155,22 @@ impl App {
                     }
                 }
             }
+
             KeyCode::Up | KeyCode::Char('k') => self.file_browser.navigate_up(),
             KeyCode::Down | KeyCode::Char('j') => self.file_browser.navigate_down(),
             KeyCode::Left | KeyCode::Char('h') => self.file_browser.navigate_back(),
             KeyCode::Right | KeyCode::Char('l') => self.file_browser.navigate_into(),
-            KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(-25),
+
             KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(25),
-            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(-5),
-            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(5),
-            KeyCode::Char('p') => self.audio.toggle_pause(),
-            KeyCode::Char('m') => self.audio.toggle_mute(),
+            KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(-25),
             KeyCode::Char('/') => self.audio.reset_speed(),
+
+            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(2),
+            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(-2),
+            KeyCode::Char('m') => self.audio.toggle_mute(),
+
+            KeyCode::Char('p') => self.audio.toggle_pause(),
+
             _ => {}
         }
     }

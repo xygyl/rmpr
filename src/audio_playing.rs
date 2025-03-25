@@ -1,6 +1,4 @@
-use crate::sink_handling::{
-    get_len, play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink,
-};
+use crate::sink_handling::{play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
 use audiotags::Tag;
 use rodio::{OutputStream, OutputStreamHandle};
 use std::{path::PathBuf, sync::Arc, thread};
@@ -14,7 +12,7 @@ pub struct AudioPlaying {
     pub vol: i16,
     pub paused: bool,
     pub muted: bool,
-    pub playing_file: Option<String>,
+    pub raw_file: Option<String>,
     pub album: Option<String>,
     pub title: Option<String>,
     pub artist: Option<String>,
@@ -33,7 +31,7 @@ impl AudioPlaying {
             vol: 100,
             paused: false,
             muted: false,
-            playing_file: None,
+            raw_file: None,
             album: None,
             title: None,
             artist: None,
@@ -47,11 +45,12 @@ impl AudioPlaying {
         let stream_handle_clone = self.stream_handle.clone();
         let current_vol = self.vol;
         let tags = Tag::default().read_from_path(path).unwrap();
+
         thread::spawn(move || {
             play_file(path_clone, stream_handle_clone, sink_clone, current_vol);
         });
 
-        self.playing_file = path.file_name().map(|n| n.to_string_lossy().to_string());
+        self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
         self.title = tags.title().map(|n| n.to_string());
         self.album = tags.album_title().map(|n| n.to_string());
         self.artist = tags.artist().map(|n| n.to_string());
@@ -92,7 +91,7 @@ impl AudioPlaying {
 
     pub fn adjust_volume(&mut self, delta: i16) {
         let new_vol = self.vol + delta;
-        if new_vol >= 0 && new_vol <= 100 && get_len(Arc::clone(&self.sink)) > 0 {
+        if new_vol >= 0 && new_vol <= 100 {
             self.vol = new_vol;
             set_vol(Arc::clone(&self.sink), self.vol);
         }

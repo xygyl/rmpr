@@ -59,11 +59,11 @@ pub fn set_vol(sink: SharedSink, mag: i16) {
     }
 } */
 
-pub fn get_len(sink: SharedSink) -> usize {
+/* pub fn get_len(sink: SharedSink) -> usize {
     let sink_guard = sink.lock().unwrap();
     if let Some(sink) = &*sink_guard {
         sink.len()
     } else {
         0
     }
-}
+} */
