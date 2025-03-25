@@ -35,8 +35,25 @@ pub struct App {
 
 impl App {
     pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
+        // Checks if the user has a home dir. If so, go to ~/Music.
+        // If not, go to current directory
+        // This code exists because dirs::audio_dir() returned None
+        let home_dir = dirs::home_dir().map(|mut path| {
+            path.push("Music");
+            path
+        });
+        let final_dir = if let Some(ref path) = home_dir {
+            if path.exists() {
+                path.clone()
+            } else {
+                initial_dir
+            }
+        } else {
+            initial_dir
+        };
+
         Ok(Self {
-            file_browser: FileBrowser::new(initial_dir),
+            file_browser: FileBrowser::new(final_dir),
             audio: AudioPlaying::new()?,
             exit: false,
         })
@@ -63,10 +80,24 @@ impl App {
         let playback_speed = config_data.colors.playback_speed;
         let volume = config_data.colors.volume;
 
+        let current_dir = self.file_browser.current_dir.to_string_lossy().to_string();
+
+        // Displays HOME as ~ instead of /home/user
+        let display_path = if let Some(home) = dirs::home_dir() {
+            let home_str = home.to_string_lossy();
+            if current_dir.starts_with(&*home_str) {
+                format!("~{}", &current_dir[home_str.len()..]) // Takes a slice of the string that starts at the end of home_str and ends at the length of the path
+            } else {
+                current_dir
+            }
+        } else {
+            current_dir
+        };
+
         let top_left = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!("{}", self.file_browser.current_dir.display()),
+                format!("{}", display_path),
                 Style::default().fg(Color::from_str(&directory_path).unwrap()),
             ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
@@ -109,7 +140,7 @@ impl App {
             ),
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!("{:>3.2}%", self.audio.vol),
+                format!("{:>3}%", self.audio.vol),
                 Style::default().fg(Color::from_str(&volume).unwrap()),
             ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
