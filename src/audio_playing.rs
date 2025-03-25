@@ -17,6 +17,7 @@ pub struct AudioPlaying {
     pub title: Option<String>,
     pub artist: Option<String>,
     pub year: Option<String>,
+    pub duration: Option<f64>,
 }
 
 impl AudioPlaying {
@@ -36,6 +37,7 @@ impl AudioPlaying {
             title: None,
             artist: None,
             year: None,
+            duration: None,
         })
     }
 
@@ -55,6 +57,7 @@ impl AudioPlaying {
         self.album = tags.album_title().map(|n| n.to_string());
         self.artist = tags.artist().map(|n| n.to_string());
         self.year = tags.year().map(|n| n.to_string());
+        self.duration = tags.duration();
 
         self.play_speed = 100;
         self.muted = false;
