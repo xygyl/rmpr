@@ -1,2 +1,1 @@
-1. If no color is specified in config.toml then code in a way for it to set color to a default.
-2. Add way to only display playable audio files
+1. Add block to bottom of screen and display file metadata
