@@ -1,4 +1,5 @@
 use crate::browser::FileBrowser;
+use crate::file_data::FileData;
 use crate::{config::load_config, input_handling::HandleInput};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
@@ -30,6 +31,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 pub struct App {
     file_browser: FileBrowser,
     audio: HandleInput,
+    data: FileData,
     exit: bool,
 }
 
@@ -47,6 +49,7 @@ impl App {
         Ok(Self {
             file_browser: FileBrowser::new(final_dir),
             audio: HandleInput::new()?,
+            data: FileData::new(),
             exit: false,
         })
     }
@@ -110,10 +113,10 @@ impl App {
             Span::styled(
                 format!(
                     "{}",
-                    self.audio
+                    self.data
                         .title
                         .as_deref()
-                        .or_else(|| self.audio.raw_file.as_deref())
+                        .or_else(|| self.data.raw_file.as_deref())
                         .unwrap_or("")
                 ),
                 Style::default().fg(Color::from_str(&currently_playing).unwrap()),
@@ -127,7 +130,7 @@ impl App {
             Span::styled(
                 format!(
                     "{}",
-                    self.audio
+                    self.data
                         .year
                         .map(|n| n.to_string())
                         .unwrap_or_else(|| "".to_string())
@@ -138,10 +141,10 @@ impl App {
             Span::styled(
                 format!(
                     "{}",
-                    self.audio
+                    self.data
                         .album
                         .as_deref()
-                        .or_else(|| self.audio.raw_file.as_deref())
+                        .or_else(|| self.data.raw_file.as_deref())
                         .unwrap_or("")
                 ),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
@@ -150,7 +153,7 @@ impl App {
             Span::styled(
                 format!(
                     "{}",
-                    self.audio
+                    self.data
                         .track_number
                         .map(|n| n.to_string())
                         .unwrap_or_else(|| "".to_string())
@@ -161,7 +164,7 @@ impl App {
             Span::styled(
                 format!(
                     "{}",
-                    self.audio
+                    self.data
                         .duration
                         .map(|n| n as u16)
                         .map(|n| n.to_string())
@@ -228,6 +231,7 @@ impl App {
                 if let Some(path) = self.file_browser.entries.get(self.file_browser.selected) {
                     if !path.is_dir() {
                         self.audio.play(path);
+                        self.data.get_file_data(path);
                     }
                 }
             }

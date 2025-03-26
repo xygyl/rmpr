@@ -1,4 +1,4 @@
-use crate::config::load_config;
+use crate::{config::load_config, file_data::FileData};
 use ratatui::{
     style::{Color, Style},
     widgets::{ListItem, ListState},
@@ -12,6 +12,7 @@ pub struct FileBrowser {
     pub list_state: ListState,
     pub sel_map: HashMap<PathBuf, usize>,
     pub entries: Vec<PathBuf>,
+    pub data: FileData,
 }
 
 impl FileBrowser {
@@ -26,6 +27,7 @@ impl FileBrowser {
             list_state,
             sel_map,
             entries: Vec::new(),
+            data: FileData::new(),
         }
     }
 

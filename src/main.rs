@@ -1,5 +1,6 @@
 mod browser;
 mod config;
+mod file_data;
 mod input_handling;
 mod sink_handling;
 mod tui;

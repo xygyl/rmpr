@@ -1,5 +1,4 @@
 use crate::sink_handling::{play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
-use audiotags::Tag;
 use rodio::{OutputStream, OutputStreamHandle};
 use std::{path::PathBuf, sync::Arc, thread};
 
@@ -12,15 +11,6 @@ pub struct HandleInput {
     pub vol: i16,
     pub paused: bool,
     pub muted: bool,
-    pub raw_file: Option<String>,
-
-    // Tags
-    pub album: Option<String>,
-    pub artist: Option<String>,
-    pub title: Option<String>,
-    pub year: Option<i32>,
-    pub duration: Option<f64>,
-    pub track_number: Option<u16>,
 }
 
 impl HandleInput {
@@ -35,15 +25,6 @@ impl HandleInput {
             vol: 100,
             paused: false,
             muted: false,
-            raw_file: None,
-
-            // Tags
-            album: None,
-            artist: None,
-            title: None,
-            year: None,
-            duration: None,
-            track_number: None,
         })
     }
 
@@ -52,21 +33,10 @@ impl HandleInput {
         let sink_clone = Arc::clone(&self.sink);
         let stream_handle_clone = self.stream_handle.clone();
         let current_vol = self.vol;
-        let tags = Tag::default().read_from_path(path).unwrap();
 
         thread::spawn(move || {
             play_file(path_clone, stream_handle_clone, sink_clone, current_vol);
         });
-
-        self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-
-        // Tag setting
-        self.album = tags.album_title().map(|n| n.to_string());
-        self.artist = tags.artist().map(|n| n.to_string());
-        self.title = tags.title().map(|n| n.to_string());
-        self.year = tags.year();
-        self.duration = tags.duration();
-        self.track_number = tags.track_number();
 
         self.play_speed = 100;
         self.muted = false;

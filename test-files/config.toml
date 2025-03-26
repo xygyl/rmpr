@@ -9,3 +9,6 @@ volume               = "#FF5D85"
 filesystem_directory = "#6B5DFF"
 filesystem_file      = "#F98771"
 highlight_color      = "#00EAFF"
+
+[directories]
+music_directory = "/home/xygyl/Music"
