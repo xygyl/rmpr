@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::fs;
+use std::{fs, path::PathBuf};
 
 #[derive(Deserialize)]
 #[serde(default)]
@@ -16,11 +16,6 @@ pub struct Colors {
     pub volume: String,
 }
 
-#[derive(Deserialize)]
-pub struct ConfigData {
-    pub colors: Colors,
-}
-
 impl Default for Colors {
     fn default() -> Self {
         Colors {
@@ -34,6 +29,40 @@ impl Default for Colors {
             paused: "#00FF00".to_string(),
             playback_speed: "#598EFF".to_string(),
             volume: "#598EFF".to_string(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(default)]
+pub struct Directories {
+    pub music_directory: PathBuf,
+}
+
+impl Default for Directories {
+    fn default() -> Self {
+        Directories {
+            music_directory: dirs::home_dir()
+                .map(|mut path| {
+                    path.push("Music");
+                    path
+                })
+                .unwrap(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ConfigData {
+    pub colors: Colors,
+    pub directories: Directories,
+}
+
+impl Default for ConfigData {
+    fn default() -> Self {
+        ConfigData {
+            colors: Colors::default(),
+            directories: Directories::default(),
         }
     }
 }

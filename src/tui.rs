@@ -35,19 +35,11 @@ pub struct App {
 
 impl App {
     pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        // Checks if the user has a home dir. If so, go to ~/Music.
-        // If not, go to current directory
-        // This code exists because dirs::audio_dir() returned None
-        let music_dir = dirs::home_dir().map(|mut path| {
-            path.push("Music");
-            path
-        });
-        let final_dir = if let Some(ref path) = music_dir {
-            if path.exists() {
-                path.clone()
-            } else {
-                initial_dir
-            }
+        let config_data = load_config();
+        let music_dir = config_data.directories.music_directory;
+
+        let final_dir = if music_dir.exists() {
+            music_dir
         } else {
             initial_dir
         };
@@ -80,9 +72,10 @@ impl App {
         let playback_speed = config_data.colors.playback_speed;
         let volume = config_data.colors.volume;
 
-        let current_dir = self.file_browser.current_dir.to_string_lossy().to_string();
+        let testing_color = "#DDE1FF";
 
         // Displays HOME as ~ instead of /home/user
+        let current_dir = self.file_browser.current_dir.to_string_lossy().to_string();
         let display_path = if let Some(home) = dirs::home_dir() {
             let home_str = home.to_string_lossy();
             if current_dir.starts_with(&*home_str) {
@@ -128,6 +121,57 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
+        // For metadata display testing
+        let bottom_center = Line::from(vec![
+            Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!(
+                    "{}",
+                    self.audio
+                        .year
+                        .map(|n| n.to_string())
+                        .unwrap_or_else(|| "".to_string())
+                ),
+                Style::default().fg(Color::from_str(&testing_color).unwrap()),
+            ),
+            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!(
+                    "{}",
+                    self.audio
+                        .album
+                        .as_deref()
+                        .or_else(|| self.audio.raw_file.as_deref())
+                        .unwrap_or("")
+                ),
+                Style::default().fg(Color::from_str(&testing_color).unwrap()),
+            ),
+            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!(
+                    "{}",
+                    self.audio
+                        .track_number
+                        .map(|n| n.to_string())
+                        .unwrap_or_else(|| "".to_string())
+                ),
+                Style::default().fg(Color::from_str(&testing_color).unwrap()),
+            ),
+            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!(
+                    "{}",
+                    self.audio
+                        .duration
+                        .map(|n| n as u16)
+                        .map(|n| n.to_string())
+                        .unwrap_or_else(|| "".to_string())
+                ),
+                Style::default().fg(Color::from_str(&testing_color).unwrap()),
+            ),
+            Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
+        ]);
+
         let bottom_right = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
@@ -152,6 +196,7 @@ impl App {
             .title_top(top_left.left_aligned())
             .title_top(top_right.right_aligned())
             .title_bottom(bottom_left.left_aligned())
+            .title_bottom(bottom_center.centered())
             .title_bottom(bottom_right.right_aligned());
 
         let list = List::new(self.file_browser.list_items())

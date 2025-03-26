@@ -1,1 +1,3 @@
 1. Add block to bottom of screen and display file metadata
+2. Sort files by track number metadata instead of name
+3. Display track name metadata instead of file name
