@@ -4,7 +4,7 @@ use rodio::{OutputStream, OutputStreamHandle};
 use std::{path::PathBuf, sync::Arc, thread};
 
 /// Encapsulates audio-related state and controls
-pub struct AudioPlaying {
+pub struct HandleInput {
     pub _stream: OutputStream,
     pub stream_handle: OutputStreamHandle,
     pub sink: SharedSink,
@@ -13,14 +13,17 @@ pub struct AudioPlaying {
     pub paused: bool,
     pub muted: bool,
     pub raw_file: Option<String>,
+
+    // Tags
     pub album: Option<String>,
-    pub title: Option<String>,
     pub artist: Option<String>,
-    pub year: Option<String>,
+    pub title: Option<String>,
+    pub year: Option<i32>,
     pub duration: Option<f64>,
+    pub track_number: Option<u16>,
 }
 
-impl AudioPlaying {
+impl HandleInput {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let (stream, stream_handle) = OutputStream::try_default()?;
         let sink = Arc::new(std::sync::Mutex::new(None));
@@ -33,11 +36,14 @@ impl AudioPlaying {
             paused: false,
             muted: false,
             raw_file: None,
+
+            // Tags
             album: None,
-            title: None,
             artist: None,
+            title: None,
             year: None,
             duration: None,
+            track_number: None,
         })
     }
 
@@ -53,11 +59,14 @@ impl AudioPlaying {
         });
 
         self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-        self.title = tags.title().map(|n| n.to_string());
+
+        // Tag setting
         self.album = tags.album_title().map(|n| n.to_string());
         self.artist = tags.artist().map(|n| n.to_string());
-        self.year = tags.year().map(|n| n.to_string());
+        self.title = tags.title().map(|n| n.to_string());
+        self.year = tags.year();
         self.duration = tags.duration();
+        self.track_number = tags.track_number();
 
         self.play_speed = 100;
         self.muted = false;

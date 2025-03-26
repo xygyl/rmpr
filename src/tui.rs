@@ -1,5 +1,5 @@
 use crate::browser::FileBrowser;
-use crate::{audio_playing::AudioPlaying, config::load_config};
+use crate::{config::load_config, input_handling::HandleInput};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute,
@@ -29,7 +29,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 /// The main application
 pub struct App {
     file_browser: FileBrowser,
-    audio: AudioPlaying,
+    audio: HandleInput,
     exit: bool,
 }
 
@@ -38,11 +38,11 @@ impl App {
         // Checks if the user has a home dir. If so, go to ~/Music.
         // If not, go to current directory
         // This code exists because dirs::audio_dir() returned None
-        let home_dir = dirs::home_dir().map(|mut path| {
+        let music_dir = dirs::home_dir().map(|mut path| {
             path.push("Music");
             path
         });
-        let final_dir = if let Some(ref path) = home_dir {
+        let final_dir = if let Some(ref path) = music_dir {
             if path.exists() {
                 path.clone()
             } else {
@@ -54,7 +54,7 @@ impl App {
 
         Ok(Self {
             file_browser: FileBrowser::new(final_dir),
-            audio: AudioPlaying::new()?,
+            audio: HandleInput::new()?,
             exit: false,
         })
     }

@@ -1,6 +1,6 @@
-mod audio_playing;
 mod browser;
 mod config;
+mod input_handling;
 mod sink_handling;
 mod tui;
 

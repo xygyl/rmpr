@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::{env, fs};
+use std::fs;
 
 #[derive(Deserialize)]
 #[serde(default)]
@@ -27,23 +27,27 @@ impl Default for Colors {
             border: "#FFFFFF".to_string(),
             currently_playing: "#FFFF00".to_string(),
             directory_path: "#00FF00".to_string(),
-            filesystem_directory: "#0000FF".to_string(),
+            filesystem_directory: "#598EFF".to_string(),
             filesystem_file: "#FFFFFF".to_string(),
             highlight_color: "#FF0000".to_string(),
-            muted: "#FFFFFF".to_string(),
-            paused: "#FFFFFF".to_string(),
-            playback_speed: "#0000FF".to_string(),
-            volume: "#FFFFFF".to_string(),
+            muted: "#FF0000".to_string(),
+            paused: "#00FF00".to_string(),
+            playback_speed: "#598EFF".to_string(),
+            volume: "#598EFF".to_string(),
         }
     }
 }
 
 pub fn load_config() -> ConfigData {
-    let home_dir = env::var("HOME").expect("Couldn't find home directory");
-    let config_path = format!("{}/.config/rmpr/config.toml", home_dir);
+    let config_path = dirs::home_dir()
+        .map(|mut path| {
+            path.push(".config/rmpr/config.toml");
+            path
+        })
+        .expect("Could not find home directory");
 
     let config_content = fs::read_to_string(&config_path)
-        .unwrap_or_else(|_| panic!("Failed to read config file at {}", config_path));
+        .unwrap_or_else(|_| panic!("Failed to read config file at {}", config_path.display()));
 
     toml::from_str(&config_content).unwrap_or_else(|_| panic!("Failed to parse TOML config"))
 }
