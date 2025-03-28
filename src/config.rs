@@ -68,12 +68,6 @@ impl Default for ConfigData {
 }
 
 pub fn load_config() -> ConfigData {
-    // let config_path = dirs::home_dir()
-    //     .map(|mut path| {
-    //         path.push(".config/rmpr/config.toml");
-    //         path
-    //     })
-    //     .expect("Could not find home directory");
     let config_path = dirs::config_dir()
         .map(|mut path| {
             path.push("rmpr/config.toml");
