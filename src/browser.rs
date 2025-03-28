@@ -12,7 +12,6 @@ pub struct FileBrowser {
     pub list_state: ListState,
     pub sel_map: HashMap<PathBuf, usize>,
     pub entries: Vec<PathBuf>,
-    pub data: FileData,
 }
 
 impl FileBrowser {
@@ -27,15 +26,15 @@ impl FileBrowser {
             list_state,
             sel_map,
             entries: Vec::new(),
-            data: FileData::new(),
         }
     }
 
     /// Refreshes the list of entries from the current directory
     pub fn update_entries(&mut self) -> io::Result<()> {
         let mut directories = Vec::new();
-        let mut playable_files = Vec::new();
-        let playable_exts = ["flac", "mp3", "wav"];
+        let mut metadata_list = Vec::new();
+
+        let playable_exts = ["flac", "mp3"];
 
         for entry in fs::read_dir(&self.current_dir)? {
             if let Ok(entry) = entry {
@@ -51,14 +50,24 @@ impl FileBrowser {
                 } else if let Some(ext) = path.extension() {
                     if playable_exts.contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref())
                     {
-                        playable_files.push(path);
+                        let mut file_data = FileData::new();
+                        file_data.get_file_data(&path);
+                        let track_number = file_data.track_number.unwrap_or(0);
+                        let title = file_data
+                            .title
+                            .unwrap_or_else(|| path.to_string_lossy().to_string());
+
+                        metadata_list.push((track_number, title, path));
                     }
                 }
             }
         }
 
         directories.sort();
-        playable_files.sort();
+        metadata_list.sort_by_key(|&(track_number, _, _)| track_number);
+
+        let playable_files: Vec<PathBuf> =
+            metadata_list.into_iter().map(|(_, _, path)| path).collect();
 
         self.entries = directories
             .into_iter()
@@ -123,16 +132,26 @@ impl FileBrowser {
         self.entries
             .iter()
             .map(|entry| {
-                let file_name = entry
-                    .file_name()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_else(|| String::from("Unknown"));
+                let display_name = if entry.is_dir() {
+                    entry
+                        .file_name()
+                        .map(|s| s.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "Unknown".to_string())
+                } else {
+                    let mut file_data = FileData::new();
+                    file_data.get_file_data(entry);
+                    file_data
+                        .title
+                        .unwrap_or(file_data.raw_file.unwrap_or("Unknown".to_string()))
+                };
+
                 let style = if entry.is_dir() {
                     Style::default().fg(Color::from_str(filesystem_directory).unwrap())
                 } else {
                     Style::default().fg(Color::from_str(filesystem_file).unwrap())
                 };
-                ListItem::new(file_name).style(style)
+
+                ListItem::new(display_name).style(style)
             })
             .collect()
     }
