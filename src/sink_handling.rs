@@ -61,14 +61,17 @@ impl AudioPlayer {
             sink.set_volume((mag as f32) / 100.0);
         }
     }
-    pub fn sink_pos(&self) -> Duration {
+
+    /// Gets the sink's position in seconds
+    pub fn sink_pos(&self) -> u64 {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
-            sink.get_pos()
+            sink.get_pos().as_secs()
         } else {
-            Duration::new(0, 0)
+            Duration::new(0, 0).as_secs()
         }
     }
+
     /*
     pub fn get_volume(&self) -> u8 {
         let sink_guard = self.sink.lock().unwrap();

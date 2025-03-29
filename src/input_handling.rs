@@ -83,7 +83,8 @@ impl HandleInput {
         }
     }
 
+    /// Returns the sink's position
     pub fn sink_pos(&self) -> u64 {
-        self.audio_player.sink_pos().as_secs()
+        self.audio_player.sink_pos()
     }
 }
