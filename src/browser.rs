@@ -123,6 +123,14 @@ impl FileBrowser {
         }
     }
 
+    pub fn goto_top(&mut self) {
+        self.selected = 0
+    }
+
+    pub fn goto_bottom(&mut self) {
+        self.selected = self.entries.len();
+    }
+
     pub fn list_items(&self) -> Vec<ListItem> {
         let config_data = load_config();
 

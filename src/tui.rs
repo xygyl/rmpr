@@ -241,6 +241,9 @@ impl App {
             KeyCode::Left | KeyCode::Char('h') => self.file_browser.navigate_back(),
             KeyCode::Right | KeyCode::Char('l') => self.file_browser.navigate_into(),
 
+            KeyCode::PageUp => self.file_browser.goto_top(),
+            KeyCode::PageDown => self.file_browser.goto_bottom(),
+
             KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(25),
             KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(-25),
             KeyCode::Char('/') => self.audio.reset_speed(),
