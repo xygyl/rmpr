@@ -1,69 +1,84 @@
 use rodio::{Decoder, OutputStreamHandle, Sink};
-use std::{
-    fs::File,
-    io::BufReader,
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::{fs::File, io::BufReader, path::PathBuf, sync::Mutex};
 
-/// Shared sink type to control audio playback.
-pub type SharedSink = Arc<Mutex<Option<Sink>>>;
-
-/// Plays a FLAC file on a separate thread.
-pub fn play_file(path: PathBuf, stream_handle: OutputStreamHandle, sink: SharedSink, vol: i16) {
-    let file = File::open(path).unwrap();
-    let reader = BufReader::new(file);
-    let source = Decoder::new(reader).unwrap();
-
-    let new_sink = Sink::try_new(&stream_handle).unwrap();
-    new_sink.append(source);
-
-    // Store the sink in shared state
-    *sink.lock().unwrap() = Some(new_sink);
-
-    set_vol(Arc::clone(&sink), vol);
+/// Encapsulates an audio sink and an output stream handle
+pub struct AudioPlayer {
+    stream_handle: OutputStreamHandle,
+    sink: Mutex<Option<Sink>>,
 }
 
-// TODO: add a function to add songs to sink queue and a way to display that at the bottom left of tui
-
-pub fn toggle_play_pause(sink: SharedSink) {
-    let sink_guard = sink.lock().unwrap();
-    if let Some(sink) = &*sink_guard {
-        if sink.is_paused() {
-            sink.play();
-        } else {
-            sink.pause();
+impl AudioPlayer {
+    /// Creates a new AudioPlayer with the given stream handle
+    pub fn new(stream_handle: OutputStreamHandle) -> Self {
+        Self {
+            stream_handle,
+            sink: Mutex::new(None),
         }
     }
-}
 
-pub fn set_play_speed(sink: SharedSink, mag: i16) {
-    let sink_guard = sink.lock().unwrap();
-    if let Some(sink) = &*sink_guard {
-        sink.set_speed((mag as f32) / 100.0);
-    }
-}
+    /// Plays a FLAC file and sets its initial volume
+    pub fn play_file(&self, path: PathBuf, vol: i16) {
+        let file = File::open(path).expect("Failed to open file");
+        let reader = BufReader::new(file);
+        let source = Decoder::new(reader).expect("Failed to decode audio");
 
-pub fn set_vol(sink: SharedSink, mag: i16) {
-    let sink_guard = sink.lock().unwrap();
-    if let Some(sink) = &*sink_guard {
-        sink.set_volume((mag as f32) / 100.0);
-    }
-}
-/* pub fn get_vol(sink: SharedSink) -> u8 {
-    let sink_guard = sink.lock().unwrap();
-    if let Some(sink) = &*sink_guard {
-        (sink.volume() * 100.0).round() as u8
-    } else {
-        100
-    }
-} */
+        let new_sink = Sink::try_new(&self.stream_handle).expect("Failed to create sink");
+        new_sink.append(source);
 
-/* pub fn get_len(sink: SharedSink) -> usize {
-    let sink_guard = sink.lock().unwrap();
-    if let Some(sink) = &*sink_guard {
-        sink.len()
-    } else {
-        0
+        // Store the sink in the player's state
+        *self.sink.lock().unwrap() = Some(new_sink);
+
+        self.set_volume(vol);
     }
-} */
+
+    /// Toggles play and pause
+    pub fn toggle_play_pause(&self) {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            match sink.is_paused() {
+                true => {
+                    sink.play();
+                }
+                false => {
+                    sink.pause();
+                }
+            }
+        }
+    }
+
+    /// Sets the playback speed
+    pub fn set_play_speed(&self, mag: i16) {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            sink.set_speed((mag as f32) / 100.0);
+        }
+    }
+
+    /// Sets the playback volume
+    pub fn set_volume(&self, mag: i16) {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            sink.set_volume((mag as f32) / 100.0);
+        }
+    }
+
+    /*
+    pub fn get_volume(&self) -> u8 {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            (sink.volume() * 100.0).round() as u8
+        } else {
+            100
+        }
+    }
+
+    pub fn get_len(&self) -> usize {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            sink.len()
+        } else {
+            0
+        }
+    }
+    */
+}

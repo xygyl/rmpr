@@ -1,12 +1,11 @@
-use crate::sink_handling::{play_file, set_play_speed, set_vol, toggle_play_pause, SharedSink};
-use rodio::{OutputStream, OutputStreamHandle};
+use crate::sink_handling::AudioPlayer;
+use rodio::OutputStream;
 use std::{path::PathBuf, sync::Arc, thread};
 
-/// Encapsulates audio-related state and controls
+/// Encapsulates audio-related state and controls.
 pub struct HandleInput {
     pub _stream: OutputStream,
-    pub stream_handle: OutputStreamHandle,
-    pub sink: SharedSink,
+    pub audio_player: Arc<AudioPlayer>,
     pub play_speed: i16,
     pub vol: i16,
     pub paused: bool,
@@ -16,11 +15,10 @@ pub struct HandleInput {
 impl HandleInput {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let (stream, stream_handle) = OutputStream::try_default()?;
-        let sink = Arc::new(std::sync::Mutex::new(None));
+        let audio_player = Arc::new(AudioPlayer::new(stream_handle));
         Ok(Self {
             _stream: stream,
-            stream_handle,
-            sink,
+            audio_player,
             play_speed: 100,
             vol: 100,
             paused: false,
@@ -28,54 +26,60 @@ impl HandleInput {
         })
     }
 
+    /// Starts playing the file on a new thread using the AudioPlayer
     pub fn play(&mut self, path: &PathBuf) {
         let path_clone = path.clone();
-        let sink_clone = Arc::clone(&self.sink);
-        let stream_handle_clone = self.stream_handle.clone();
         let current_vol = self.vol;
-
+        let audio_player = Arc::clone(&self.audio_player);
         thread::spawn(move || {
-            play_file(path_clone, stream_handle_clone, sink_clone, current_vol);
+            audio_player.play_file(path_clone, current_vol);
         });
-
         self.play_speed = 100;
         self.muted = false;
         self.paused = false;
     }
 
+    /// Adjusts the playback speed by a given delta
     pub fn adjust_speed(&mut self, delta: i16) {
         let new_speed = self.play_speed + delta;
         if new_speed >= 25 && new_speed <= 200 {
             self.play_speed = new_speed;
-            set_play_speed(Arc::clone(&self.sink), self.play_speed);
+            self.audio_player.set_play_speed(self.play_speed);
         }
     }
 
+    /// Resets the playback speed to normal
     pub fn reset_speed(&mut self) {
         self.play_speed = 100;
-        set_play_speed(Arc::clone(&self.sink), self.play_speed);
+        self.audio_player.set_play_speed(self.play_speed);
     }
 
+    /// Toggles mute on and off
     pub fn toggle_mute(&mut self) {
-        if !self.muted {
-            set_vol(Arc::clone(&self.sink), 0);
-            self.muted = true;
-        } else {
-            set_vol(Arc::clone(&self.sink), self.vol);
-            self.muted = false;
+        match self.muted {
+            true => {
+                self.audio_player.set_volume(self.vol);
+                self.muted = false;
+            }
+            false => {
+                self.audio_player.set_volume(0);
+                self.muted = true;
+            }
         }
     }
 
+    /// Toggles between play and pause
     pub fn toggle_pause(&mut self) {
         self.paused = !self.paused;
-        toggle_play_pause(Arc::clone(&self.sink));
+        self.audio_player.toggle_play_pause();
     }
 
+    /// Adjusts the volume by a given delta
     pub fn adjust_volume(&mut self, delta: i16) {
         let new_vol = self.vol + delta;
         if new_vol >= 0 && new_vol <= 100 {
             self.vol = new_vol;
-            set_vol(Arc::clone(&self.sink), self.vol);
+            self.audio_player.set_volume(self.vol);
         }
     }
 }
