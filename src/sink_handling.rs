@@ -1,5 +1,5 @@
 use rodio::{Decoder, OutputStreamHandle, Sink};
-use std::{fs::File, io::BufReader, path::PathBuf, sync::Mutex};
+use std::{fs::File, io::BufReader, path::PathBuf, sync::Mutex, time::Duration};
 
 /// Encapsulates an audio sink and an output stream handle
 pub struct AudioPlayer {
@@ -61,7 +61,14 @@ impl AudioPlayer {
             sink.set_volume((mag as f32) / 100.0);
         }
     }
-
+    pub fn sink_pos(&self) -> Duration {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            sink.get_pos()
+        } else {
+            Duration::new(0, 0)
+        }
+    }
     /*
     pub fn get_volume(&self) -> u8 {
         let sink_guard = self.sink.lock().unwrap();

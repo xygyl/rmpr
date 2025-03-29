@@ -2,3 +2,4 @@
 2. Rework bottom_center elements so that the unwrap_or_else is in the main struct impl rather than the tui code (like duration_as_string)
 3. Instead of metadata being given to the file browser and per-file (tui.rs:226:227), see if the data could be gotten from metadata_list in browser
 4. Add keybind to go to directory of curretnly playing song. If no song is playing then do nothing
+5. Add way to append songs to the sink

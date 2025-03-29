@@ -82,4 +82,8 @@ impl HandleInput {
             self.audio_player.set_volume(self.vol);
         }
     }
+
+    pub fn sink_pos(&self) -> u64 {
+        self.audio_player.sink_pos().as_secs()
+    }
 }
