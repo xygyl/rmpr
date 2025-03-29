@@ -1,6 +1,6 @@
 use crate::browser::FileBrowser;
 use crate::file_data::FileData;
-use crate::{config::load_config, input_handling::HandleInput};
+use crate::{config::load_config, input_handler::InputHandler};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute,
@@ -30,7 +30,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 /// The main application
 pub struct App {
     file_browser: FileBrowser,
-    audio: HandleInput,
+    audio: InputHandler,
     data: FileData,
     exit: bool,
 }
@@ -48,7 +48,7 @@ impl App {
 
         Ok(Self {
             file_browser: FileBrowser::new(final_dir),
-            audio: HandleInput::new()?,
+            audio: InputHandler::new()?,
             data: FileData::new(),
             exit: false,
         })

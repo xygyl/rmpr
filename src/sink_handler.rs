@@ -2,13 +2,13 @@ use rodio::{Decoder, OutputStreamHandle, Sink};
 use std::{fs::File, io::BufReader, path::PathBuf, sync::Mutex, time::Duration};
 
 /// Encapsulates an audio sink and an output stream handle
-pub struct AudioPlayer {
+pub struct SinkHandler {
     stream_handle: OutputStreamHandle,
     sink: Mutex<Option<Sink>>,
 }
 
-impl AudioPlayer {
-    /// Creates a new AudioPlayer with the given stream handle
+impl SinkHandler {
+    /// Creates a new SinkHandler with the given stream handle
     pub fn new(stream_handle: OutputStreamHandle) -> Self {
         Self {
             stream_handle,

@@ -1,21 +1,21 @@
-use crate::sink_handling::AudioPlayer;
+use crate::sink_handler::SinkHandler;
 use rodio::OutputStream;
 use std::{path::PathBuf, sync::Arc, thread};
 
 /// Encapsulates audio-related state and controls.
-pub struct HandleInput {
+pub struct InputHandler {
     pub _stream: OutputStream,
-    pub audio_player: Arc<AudioPlayer>,
+    pub audio_player: Arc<SinkHandler>,
     pub play_speed: i16,
     pub vol: i16,
     pub paused: bool,
     pub muted: bool,
 }
 
-impl HandleInput {
+impl InputHandler {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let (stream, stream_handle) = OutputStream::try_default()?;
-        let audio_player = Arc::new(AudioPlayer::new(stream_handle));
+        let audio_player = Arc::new(SinkHandler::new(stream_handle));
         Ok(Self {
             _stream: stream,
             audio_player,
@@ -30,9 +30,9 @@ impl HandleInput {
     pub fn play(&mut self, path: &PathBuf) {
         let path_clone = path.clone();
         let current_vol = self.vol;
-        let audio_player = Arc::clone(&self.audio_player);
+        let sink_handler = Arc::clone(&self.audio_player);
         thread::spawn(move || {
-            audio_player.play_file(path_clone, current_vol);
+            sink_handler.play_file(path_clone, current_vol);
         });
         self.play_speed = 100;
         self.muted = false;
