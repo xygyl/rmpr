@@ -1,3 +1,3 @@
 1. Add block to bottom of screen and display file metadata
-2. Sort files by track number metadata instead of name
-3. Display track name metadata instead of file name
+2. Rework bottom_center elements so that the unwrap_or_else is in the main struct impl rather than the tui code (like duration_as_string)
+3. Instead of metadata being given to the file browser and per-file (tui.rs:226:227), see if the data could be gotten from metadata_list in browser
