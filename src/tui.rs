@@ -129,9 +129,9 @@ impl App {
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
                 format!(
-                    "{}",
+                    " {} ",
                     self.data
-                        .year
+                        .track_number
                         .map(|n| n.to_string())
                         .unwrap_or_else(|| "".to_string())
                 ),
@@ -140,7 +140,7 @@ impl App {
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
                 format!(
-                    "{}",
+                    " {} ",
                     self.data
                         .album
                         .as_deref()
@@ -152,9 +152,9 @@ impl App {
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
                 format!(
-                    "{}",
+                    " {} ",
                     self.data
-                        .track_number
+                        .year
                         .map(|n| n.to_string())
                         .unwrap_or_else(|| "".to_string())
                 ),
@@ -162,14 +162,7 @@ impl App {
             ),
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!(
-                    "{}",
-                    self.data
-                        .duration
-                        .map(|n| n as u16)
-                        .map(|n| n.to_string())
-                        .unwrap_or_else(|| "".to_string())
-                ),
+                format!(" {} ", self.data.duration_as_string()),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
             ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
