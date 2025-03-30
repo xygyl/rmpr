@@ -1,5 +1,7 @@
 use crate::browser::FileBrowser;
+use crate::config::ConfigData;
 use crate::file_data::FileData;
+use crate::metadata_manager::MetadataQueue;
 use crate::{config::load_config, input_handler::InputHandler};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
@@ -29,6 +31,8 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 
 /// The main application
 pub struct App {
+    config: ConfigData,
+    meta_manager: MetadataQueue,
     file_browser: FileBrowser,
     audio: InputHandler,
     data: FileData,
@@ -37,8 +41,7 @@ pub struct App {
 
 impl App {
     pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let config_data = load_config();
-        let music_dir = config_data.directories.music_directory;
+        let music_dir = load_config().directories.music_directory;
 
         let final_dir = if music_dir.exists() {
             music_dir
@@ -47,6 +50,8 @@ impl App {
         };
 
         Ok(Self {
+            config: load_config(),
+            meta_manager: MetadataQueue::new(),
             file_browser: FileBrowser::new(final_dir),
             audio: InputHandler::new()?,
             data: FileData::new(),
@@ -64,16 +69,14 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let config_data = load_config();
-
-        let border = config_data.colors.border;
-        let currently_playing = config_data.colors.currently_playing;
-        let directory_path = config_data.colors.directory_path;
-        let highlight_color = config_data.colors.highlight_color;
-        let muted = config_data.colors.muted;
-        let paused = config_data.colors.paused;
-        let playback_speed = config_data.colors.playback_speed;
-        let volume = config_data.colors.volume;
+        let border = self.config.colors.border.clone();
+        let currently_playing = self.config.colors.currently_playing.clone();
+        let directory_path = self.config.colors.directory_path.clone();
+        let highlight_color = self.config.colors.highlight_color.clone();
+        let muted = self.config.colors.muted.clone();
+        let paused = self.config.colors.paused.clone();
+        let playback_speed = self.config.colors.playback_speed.clone();
+        let volume = self.config.colors.volume.clone();
 
         let testing_color = "#DDE1FF";
 
@@ -111,14 +114,7 @@ impl App {
         let bottom_left = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!(
-                    "{}",
-                    self.data
-                        .title
-                        .as_deref()
-                        .or_else(|| self.data.raw_file.as_deref())
-                        .unwrap_or("")
-                ),
+                format!("{}", self.data.display_title()),
                 Style::default().fg(Color::from_str(&currently_playing).unwrap()),
             ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
@@ -128,41 +124,27 @@ impl App {
         let bottom_center = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!(
-                    " {} ",
-                    self.data
-                        .track_number
-                        .map(|n| n.to_string())
-                        .unwrap_or_else(|| "".to_string())
-                ),
+                format!(" {} ", self.data.display_track_number()),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
             ),
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!(
-                    " {} ",
-                    self.data
-                        .album
-                        .as_deref()
-                        .or_else(|| self.data.raw_file.as_deref())
-                        .unwrap_or("")
-                ),
+                format!(" {} ", self.data.display_artist()),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
             ),
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!(
-                    " {} ",
-                    self.data
-                        .year
-                        .map(|n| n.to_string())
-                        .unwrap_or_else(|| "".to_string())
-                ),
+                format!(" {} ", self.data.display_album()),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
             ),
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!(" {} ", self.data.duration_as_string()),
+                format!(" {} ", self.data.display_year()),
+                Style::default().fg(Color::from_str(&testing_color).unwrap()),
+            ),
+            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
+            Span::styled(
+                format!(" {} ", self.data.display_duration_display()),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
             ),
             Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
@@ -222,14 +204,26 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
+        let speed_delta = self.config.controls.speed_delta;
+        let audio_delta = self.config.controls.audio_delta;
+
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
 
             KeyCode::Enter => {
                 if let Some(path) = self.file_browser.entries.get(self.file_browser.selected) {
                     if !path.is_dir() {
-                        self.audio.play(path);
-                        self.data.get_file_data(path);
+                        match self.audio.sink_len() {
+                            0 => {
+                                self.audio.play(path);
+                                self.meta_manager.update_current(FileData::new(), path);
+                                self.data = self.meta_manager.current.clone();
+                            }
+                            _ => {
+                                self.audio.append(path);
+                                self.meta_manager.queue_metadata(FileData::new(), path);
+                            }
+                        }
                     }
                 }
             }
@@ -242,15 +236,36 @@ impl App {
             KeyCode::PageUp => self.file_browser.goto_top(),
             KeyCode::PageDown => self.file_browser.goto_bottom(),
 
-            KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(25),
-            KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(-25),
+            KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(speed_delta),
+            KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(speed_delta * -1),
             KeyCode::Char('/') => self.audio.reset_speed(),
 
-            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(2),
-            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(-2),
+            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(audio_delta),
+            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(audio_delta * -1),
             KeyCode::Char('m') => self.audio.toggle_mute(),
 
             KeyCode::Char('p') => self.audio.toggle_pause(),
+
+            KeyCode::Char('s') => match self.audio.sink_len() {
+                0 => {}
+                1 => {
+                    self.audio.clear_sink();
+                    self.data = self.meta_manager.pop_next().unwrap_or(FileData {
+                        raw_file: None,
+                        album: None,
+                        artist: None,
+                        title: None,
+                        year: None,
+                        duration_display: None,
+                        duration_as_secs: None,
+                        track_number: None,
+                    });
+                }
+                _ => {
+                    self.audio.sink_skip();
+                    self.data = self.meta_manager.pop_next().unwrap();
+                }
+            },
 
             _ => {}
         }

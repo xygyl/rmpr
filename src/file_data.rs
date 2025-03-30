@@ -2,6 +2,7 @@ use audiotags::Tag;
 use std::path::PathBuf;
 
 /// Encapsulates file data information
+#[derive(Clone)]
 pub struct FileData {
     pub raw_file: Option<String>,
     pub album: Option<String>,
@@ -31,7 +32,6 @@ impl FileData {
         let tags = Tag::default().read_from_path(path).unwrap();
 
         self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-
         self.album = tags.album_title().map(|n| n.to_string());
         self.artist = tags.artist().map(|n| n.to_string());
         self.title = tags.title().map(|n| n.to_string());
@@ -41,13 +41,58 @@ impl FileData {
         self.track_number = tags.track_number();
     }
 
+    /// Display album or nothing
+    pub fn display_album(&self) -> String {
+        match self.album.clone() {
+            Some(display) => format!("{}", display),
+            None => "".to_string(),
+        }
+    }
+
+    /// Display artists or nothing
+    pub fn display_artist(&self) -> String {
+        match self.artist.clone() {
+            Some(artist) => format!("{}", artist),
+            None => "".to_string(),
+        }
+    }
+
+    /// Display title, or raw file, or nothing if neither is found
+    pub fn display_title(&self) -> String {
+        match self.title.clone() {
+            Some(title) => format!("{}", title),
+            None => match self.raw_file.clone() {
+                Some(raw_file) => format!("{}", raw_file),
+                None => "".to_string(),
+            },
+        }
+    }
+
+    /// Display year or nothing
+    pub fn display_year(&self) -> String {
+        match self.year {
+            Some(year) => format!("{}", year),
+            None => "".to_string(),
+        }
+    }
+
+    /// Display track_number or nothing
+    pub fn display_track_number(&self) -> String {
+        match self.track_number {
+            Some(track_number) => format!("{}", track_number),
+            None => "".to_string(),
+        }
+    }
+
+    /// Converts seconds to seconds and minutes
     fn sec_to_min_sec(duration: f64) -> (f64, f64) {
         let min = (duration / 60.0).floor();
         let sec = (duration % 60.0).floor();
         (min, sec)
     }
 
-    pub fn duration_as_string(&self) -> String {
+    /// Display duration_display or nothing
+    pub fn display_duration_display(&self) -> String {
         match self.duration_display {
             Some((min, sec)) => format!("{:.0}:{:02.0}", min, sec),
             None => "".to_string(),

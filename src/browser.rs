@@ -1,4 +1,7 @@
-use crate::{config::load_config, file_data::FileData};
+use crate::{
+    config::{load_config, ConfigData},
+    file_data::FileData,
+};
 use ratatui::{
     style::{Color, Style},
     widgets::{ListItem, ListState},
@@ -7,6 +10,7 @@ use std::{collections::HashMap, fs, io, path::PathBuf, str::FromStr};
 
 /// Encapsulates file system browsing state and behavior
 pub struct FileBrowser {
+    pub config: ConfigData,
     pub current_dir: PathBuf,
     pub selected: usize,
     pub list_state: ListState,
@@ -21,6 +25,7 @@ impl FileBrowser {
         let mut sel_map = HashMap::new();
         sel_map.insert(initial_dir.clone(), 0);
         Self {
+            config: load_config(),
             current_dir: initial_dir,
             selected: 0,
             list_state,
@@ -132,10 +137,8 @@ impl FileBrowser {
     }
 
     pub fn list_items(&self) -> Vec<ListItem> {
-        let config_data = load_config();
-
-        let filesystem_directory = config_data.colors.filesystem_directory.as_str();
-        let filesystem_file = config_data.colors.filesystem_file.as_str();
+        let filesystem_directory = self.config.colors.filesystem_directory.clone();
+        let filesystem_file = self.config.colors.filesystem_file.clone();
 
         self.entries
             .iter()
@@ -154,9 +157,9 @@ impl FileBrowser {
                 };
 
                 let style = if entry.is_dir() {
-                    Style::default().fg(Color::from_str(filesystem_directory).unwrap())
+                    Style::default().fg(Color::from_str(&filesystem_directory).unwrap())
                 } else {
-                    Style::default().fg(Color::from_str(filesystem_file).unwrap())
+                    Style::default().fg(Color::from_str(&filesystem_file).unwrap())
                 };
 
                 ListItem::new(display_name).style(style)

@@ -2,6 +2,7 @@ mod browser;
 mod config;
 mod file_data;
 mod input_handler;
+mod metadata_manager;
 mod sink_handler;
 mod tui;
 

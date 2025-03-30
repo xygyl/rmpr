@@ -72,13 +72,37 @@ impl SinkHandler {
         }
     }
 
-    /*
-    pub fn get_volume(&self) -> u8 {
+    /// Appends source to sink
+    pub fn append_to_sink(&self, path: PathBuf, vol: i16) {
+        let file = File::open(path).expect("Failed to open file");
+        let reader = BufReader::new(file);
+        let source = Decoder::new(reader).expect("Failed to decode audio");
+
+        {
+            let sink_guard = self.sink.lock().unwrap();
+            if let Some(ref sink) = *sink_guard {
+                if sink.len() >= 1 {
+                    sink.append(source);
+                }
+            }
+        } // Lock is dropped here. Prevents deadlocks.
+
+        self.set_volume(vol);
+    }
+
+    /// Skips to the next source in the sink
+    pub fn skip(&self) {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
-            (sink.volume() * 100.0).round() as u8
-        } else {
-            100
+            sink.skip_one();
+        }
+    }
+
+    /// Removes all currently loaded Sources from the Sink, and pauses it
+    pub fn clear(&self) {
+        let sink_guard = self.sink.lock().unwrap();
+        if let Some(ref sink) = *sink_guard {
+            sink.clear();
         }
     }
 
@@ -90,5 +114,4 @@ impl SinkHandler {
             0
         }
     }
-    */
 }

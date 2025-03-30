@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)] // Clone is needed for lines 69-76 in tui and 140-141 in browser
 #[serde(default)]
 pub struct Colors {
     pub border: String,
@@ -53,9 +53,30 @@ impl Default for Directories {
 }
 
 #[derive(Deserialize)]
+#[serde(default)]
+pub struct Controls {
+    pub audio_delta: i16,
+    pub speed_delta: i16,
+    pub speed_max: i16,
+    pub speed_min: i16,
+}
+
+impl Default for Controls {
+    fn default() -> Self {
+        Controls {
+            audio_delta: 2,
+            speed_delta: 25,
+            speed_max: 200,
+            speed_min: 25,
+        }
+    }
+}
+
+#[derive(Deserialize)]
 pub struct ConfigData {
     pub colors: Colors,
     pub directories: Directories,
+    pub controls: Controls,
 }
 
 impl Default for ConfigData {
@@ -63,6 +84,7 @@ impl Default for ConfigData {
         ConfigData {
             colors: Colors::default(),
             directories: Directories::default(),
+            controls: Controls::default(),
         }
     }
 }
