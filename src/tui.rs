@@ -120,7 +120,7 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
-        // For metadata display testing
+        // For metadata and stats display testing
         let bottom_center = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
@@ -260,7 +260,7 @@ impl App {
                 0 => {}
                 1 => {
                     self.audio.clear_sink();
-                    self.data = self.meta_manager.pop_next().unwrap_or(FileData {
+                    self.data = FileData {
                         raw_file: None,
                         album: None,
                         artist: None,
@@ -269,7 +269,7 @@ impl App {
                         duration_display: None,
                         duration_as_secs: None,
                         track_number: None,
-                    });
+                    }
                 }
                 _ => {
                     self.audio.sink_skip();
