@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
+/// Encapsulates themeing data
 #[derive(Deserialize, Clone)] // Clone is needed for lines 69-76 in tui and 140-141 in browser
 #[serde(default)]
 pub struct Colors {
@@ -33,6 +34,7 @@ impl Default for Colors {
     }
 }
 
+/// Encapsulates directories data
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Directories {
@@ -52,6 +54,7 @@ impl Default for Directories {
     }
 }
 
+/// Encapsulates controlling data
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Controls {
@@ -72,6 +75,7 @@ impl Default for Controls {
     }
 }
 
+/// Encapsulates all config.toml parameters
 #[derive(Deserialize)]
 pub struct ConfigData {
     pub colors: Colors,
@@ -89,6 +93,7 @@ impl Default for ConfigData {
     }
 }
 
+/// Loads the ConfigData from config.toml
 pub fn load_config() -> ConfigData {
     let config_path = dirs::config_dir()
         .map(|mut path| {

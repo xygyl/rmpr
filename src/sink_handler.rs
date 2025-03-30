@@ -8,7 +8,6 @@ pub struct SinkHandler {
 }
 
 impl SinkHandler {
-    /// Creates a new SinkHandler with the given stream handle
     pub fn new(stream_handle: OutputStreamHandle) -> Self {
         Self {
             stream_handle,
@@ -16,7 +15,7 @@ impl SinkHandler {
         }
     }
 
-    /// Plays a FLAC file and sets its initial volume
+    /// Plays the given file and sets its volume
     pub fn play_file(&self, path: PathBuf, vol: i16) {
         let file = File::open(path).expect("Failed to open file");
         let reader = BufReader::new(file);
@@ -25,7 +24,6 @@ impl SinkHandler {
         let new_sink = Sink::try_new(&self.stream_handle).expect("Failed to create sink");
         new_sink.append(source);
 
-        // Store the sink in the player's state
         *self.sink.lock().unwrap() = Some(new_sink);
 
         self.set_volume(vol);
@@ -106,6 +104,7 @@ impl SinkHandler {
         }
     }
 
+    /// Returns how many elements are in the sink
     pub fn get_len(&self) -> usize {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {

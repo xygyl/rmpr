@@ -88,6 +88,7 @@ impl FileBrowser {
         Ok(())
     }
 
+    /// Moves the cursor up one element or goes to the bottom if at the top
     pub fn navigate_up(&mut self) {
         if self.entries.is_empty() {
             return;
@@ -100,6 +101,7 @@ impl FileBrowser {
         self.sel_map.insert(self.current_dir.clone(), self.selected);
     }
 
+    /// Moves the cursor down one element or goes to the top if at the bottom
     pub fn navigate_down(&mut self) {
         if self.entries.is_empty() {
             return;
@@ -112,6 +114,7 @@ impl FileBrowser {
         self.sel_map.insert(self.current_dir.clone(), self.selected);
     }
 
+    /// Navigates into the selected directory, either setting the cursor to the saved position or 0
     pub fn navigate_into(&mut self) {
         if let Some(path) = self.entries.get(self.selected) {
             if path.is_dir() {
@@ -121,6 +124,7 @@ impl FileBrowser {
         }
     }
 
+    /// Navigates into the previous directory, either setting the cursor to the saved position or 0
     pub fn navigate_back(&mut self) {
         if let Some(parent) = self.current_dir.parent() {
             self.current_dir = parent.to_path_buf();
@@ -128,14 +132,17 @@ impl FileBrowser {
         }
     }
 
+    /// Moves the cursor to the top of the list
     pub fn goto_top(&mut self) {
         self.selected = 0
     }
 
+    /// Moves the cursor to the bottom of the list
     pub fn goto_bottom(&mut self) {
         self.selected = self.entries.len();
     }
 
+    /// Lists all items in the directory; displaying directories as their name and files as their metadata name
     pub fn list_items(&self) -> Vec<ListItem> {
         let filesystem_directory = self.config.colors.filesystem_directory.clone();
         let filesystem_file = self.config.colors.filesystem_file.clone();

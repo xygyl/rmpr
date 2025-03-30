@@ -28,6 +28,7 @@ impl FileData {
         }
     }
 
+    /// Sets FileData with the respective values from the file
     pub fn get_file_data(&mut self, path: &PathBuf) {
         let tags = Tag::default().read_from_path(path).unwrap();
 

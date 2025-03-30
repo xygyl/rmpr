@@ -1,6 +1,7 @@
 use crate::file_data::FileData;
 use std::path::PathBuf;
 
+/// Encapsulates metadata queue information for correct displaying
 #[derive(Clone)]
 pub struct MetadataQueue {
     pub current: FileData,

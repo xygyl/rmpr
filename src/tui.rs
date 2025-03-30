@@ -1,8 +1,7 @@
-use crate::browser::FileBrowser;
-use crate::config::ConfigData;
-use crate::file_data::FileData;
-use crate::metadata_manager::MetadataQueue;
-use crate::{config::load_config, input_handler::InputHandler};
+use crate::{
+    browser::FileBrowser, config::load_config, config::ConfigData, file_data::FileData,
+    input_handler::InputHandler, metadata_manager::MetadataQueue,
+};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     execute,
@@ -93,6 +92,7 @@ impl App {
             current_dir
         };
 
+        // Displays the CWD
         let top_left = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
@@ -102,6 +102,7 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
+        // Displays the current play speed
         let top_right = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
@@ -111,6 +112,7 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
+        // Displays the title of the currently playing song
         let bottom_left = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
@@ -155,6 +157,7 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
+        // Displays audio playing information
         let bottom_right = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
@@ -193,6 +196,7 @@ impl App {
         )
     }
 
+    /// Handles events
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
@@ -203,6 +207,7 @@ impl App {
         Ok(())
     }
 
+    /// Handles key events
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         let speed_delta = self.config.controls.speed_delta;
         let audio_delta = self.config.controls.audio_delta;
