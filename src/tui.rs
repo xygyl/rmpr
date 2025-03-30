@@ -213,6 +213,16 @@ impl App {
             KeyCode::Enter => {
                 if let Some(path) = self.file_browser.entries.get(self.file_browser.selected) {
                     if !path.is_dir() {
+                        self.audio.play(path);
+                        self.meta_manager.update_current(FileData::new(), path);
+                        self.data = self.meta_manager.current.clone();
+                    }
+                }
+            }
+
+            KeyCode::Char('a') => {
+                if let Some(path) = self.file_browser.entries.get(self.file_browser.selected) {
+                    if !path.is_dir() {
                         match self.audio.sink_len() {
                             0 => {
                                 self.audio.play(path);
