@@ -101,11 +101,6 @@ impl App {
                 format!(" {} ", self.data.display_duration_display()),
                 Style::default().fg(Color::from_str(&testing_color).unwrap()),
             ),
-            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
-            Span::styled(
-                format!(" {} ", self.audio.sink_pos()),
-                Style::default().fg(Color::from_str(&testing_color).unwrap()),
-            ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
