@@ -28,6 +28,7 @@ impl FileData {
         }
     }
 
+    /// Sets FileData with the respective values from the file
     pub fn get_file_data(&mut self, path: &PathBuf) {
         let valid_exts = ["flac", "mp3", "m4a", "mp4"];
 
