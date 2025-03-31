@@ -103,16 +103,6 @@ impl App {
                 format!("{}", display_path),
                 Style::default().fg(Color::from_str(&directory_path).unwrap()),
             ),
-            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
-            Span::styled(
-                format!("{}", self.audio.sink_len()),
-                Style::default().fg(Color::from_str(&directory_path).unwrap()),
-            ),
-            Span::styled("┃", Style::default().fg(Color::from_str(&border).unwrap())),
-            Span::styled(
-                format!("{:?}", self.name),
-                Style::default().fg(Color::from_str(&directory_path).unwrap()),
-            ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
@@ -136,14 +126,15 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
         ]);
 
-        let vec_test = Line::from(vec![
+        // See the songs in the queue and their order (for testing)
+        /* let queue = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(&border).unwrap())),
             Span::styled(
-                format!("{:?}", self.path_queue),
-                Style::default().fg(Color::from_str(&currently_playing).unwrap()),
+                format!("{:?}", self.name),
+                Style::default().fg(Color::from_str(&directory_path).unwrap()),
             ),
             Span::styled("┣", Style::default().fg(Color::from_str(&border).unwrap())),
-        ]);
+        ]); */
 
         // For metadata and stats display testing
         let bottom_center = Line::from(vec![
@@ -205,8 +196,8 @@ impl App {
             .title_top(top_left.left_aligned())
             .title_top(top_right.right_aligned())
             .title_bottom(bottom_left.left_aligned())
-            // .title_bottom(bottom_center.centered())
-            .title_bottom(vec_test.centered())
+            .title_bottom(bottom_center.centered())
+            // .title_bottom(queue.centered())
             .title_bottom(bottom_right.right_aligned());
 
         let list = List::new(self.file_browser.list_items())
@@ -270,15 +261,13 @@ impl App {
                                         .unwrap()
                                         .to_string(),
                                 );
-                                // self.audio.clear_sink();
-                                self.audio.play(&self.path_queue.remove(0).to_owned());
-                                self.name.remove(0);
-                                self.meta_manager.update_current(FileData::new(), path);
-                                self.data = self.meta_manager.current.clone();
-
+                                self.audio.clear_sink();
+                                self.audio.play(&self.path_queue[0]);
                                 for element in self.path_queue.clone() {
                                     self.audio.append(&element);
                                 }
+                                self.meta_manager.update_current(FileData::new(), path);
+                                self.data = self.meta_manager.current.clone();
                             }
                         }
                     }
@@ -294,74 +283,75 @@ impl App {
 
                                 self.meta_manager.update_current(FileData::new(), path);
                                 self.data = self.meta_manager.current.clone();
-
-                                self.path_queue.push(path.clone());
-                                self.name.push(
-                                    path.clone()
-                                        .file_name()
-                                        .unwrap()
-                                        .to_str()
-                                        .unwrap()
-                                        .to_string(),
-                                );
                             }
                             _ => {
                                 self.audio.append(path);
                                 self.meta_manager.queue_metadata(FileData::new(), path);
-                                self.path_queue.push(path.clone());
-                                self.name.push(
-                                    path.clone()
-                                        .file_name()
-                                        .unwrap()
-                                        .to_str()
-                                        .unwrap()
-                                        .to_string(),
-                                );
                             }
                         }
                     }
+                    self.path_queue.push(path.clone());
+                    self.name.push(
+                        path.clone()
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_string(),
+                    );
                 }
             }
 
-            KeyCode::Char('s') => match self.audio.sink_len() {
-                0 => {
+            KeyCode::Char('s') => {
+                if self.audio.sink_len() > 0 {
+                    self.path_queue.remove(0);
+                    self.name.remove(0);
                     self.audio.clear_sink();
-                    self.path_queue.clear();
-                    self.name.clear();
-                }
-                1 => {
-                    self.audio.play(&self.path_queue.get(0).unwrap());
-                    // self.path_queue.clear();
-                    // self.name.clear();
-                    // self.audio.clear_sink();
-                    self.data = FileData {
-                        raw_file: None,
-                        album: None,
-                        artist: None,
-                        title: None,
-                        year: None,
-                        duration_display: None,
-                        duration_as_secs: None,
-                        track_number: None,
+
+                    if let Some(next_path) = self.path_queue.get(0) {
+                        self.audio.play(next_path);
+                        for element in self.path_queue.iter().skip(1) {
+                            self.audio.append(element);
+                        }
+
+                        self.data = self.meta_manager.pop_next().unwrap_or(FileData {
+                            raw_file: None,
+                            album: None,
+                            artist: None,
+                            title: None,
+                            year: None,
+                            duration_display: None,
+                            duration_as_secs: None,
+                            track_number: None,
+                        });
+                    } else {
+                        self.data = FileData {
+                            raw_file: None,
+                            album: None,
+                            artist: None,
+                            title: None,
+                            year: None,
+                            duration_display: None,
+                            duration_as_secs: None,
+                            track_number: None,
+                        };
                     }
                 }
-                2 => {
-                    self.audio.play(&self.path_queue.remove(0));
-                }
-                _ => {
-                    // self.audio.sink_skip();
-                    self.audio.play(&self.path_queue.remove(0));
-                    self.name.remove(0);
-                    self.data = self.meta_manager.pop_next().unwrap();
-                }
-            },
+            }
 
             KeyCode::Up | KeyCode::Char('k') => self.file_browser.navigate_up(),
             KeyCode::Down | KeyCode::Char('j') => self.file_browser.navigate_down(),
             KeyCode::Left | KeyCode::Char('h') => self.file_browser.navigate_back(),
             KeyCode::Right | KeyCode::Char('l') => self.file_browser.navigate_into(),
+
             KeyCode::Char('g') => {
                 self.file_browser.current_dir = self.config.directories.music_directory.clone()
+            }
+
+            KeyCode::Char('c') => {
+                self.audio.clear_sink();
+                self.path_queue.clear();
+                self.name.clear();
             }
 
             KeyCode::PageUp => self.file_browser.goto_top(),

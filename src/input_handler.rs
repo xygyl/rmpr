@@ -15,7 +15,6 @@ pub struct InputHandler {
     pub paused: bool,
     pub muted: bool,
 }
-
 impl InputHandler {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let (stream, stream_handle) = OutputStream::try_default()?;
@@ -55,9 +54,9 @@ impl InputHandler {
     }
 
     /// Skip to next song in the sink
-    pub fn sink_skip(&self) {
+    /* pub fn sink_skip(&self) {
         self.audio_player.skip();
-    }
+    } */
 
     /// Removes all currently loaded Sources from the Sink, and pauses it
     pub fn clear_sink(&self) {

@@ -37,13 +37,4 @@ impl MetadataQueue {
             None
         }
     }
-
-    pub fn change_current(&mut self) {
-        let mut new_queue: Vec<FileData> = Vec::new();
-        new_queue.insert(0, self.current.clone());
-        for item in self.queue.clone() {
-            new_queue.push(item);
-        }
-        self.queue = new_queue.clone();
-    }
 }

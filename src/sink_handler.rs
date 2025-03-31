@@ -92,12 +92,12 @@ impl SinkHandler {
     }
 
     /// Skips to the next source in the sink
-    pub fn skip(&self) {
+    /* pub fn skip(&self) {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
             sink.skip_one();
         }
-    }
+    } */
 
     /// Removes all currently loaded Sources from the Sink, and pauses it
     pub fn clear(&self) {
