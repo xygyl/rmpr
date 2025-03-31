@@ -136,6 +136,9 @@ impl App {
             KeyCode::Left | KeyCode::Char('h') => self.file_browser.navigate_back(),
             KeyCode::Right | KeyCode::Char('l') => self.file_browser.navigate_into(),
 
+            KeyCode::PageUp => self.file_browser.goto_top(),
+            KeyCode::PageDown => self.file_browser.goto_bottom(),
+
             KeyCode::Char('g') => {
                 self.file_browser.current_dir = self.config.directories.music_directory.clone()
             }
@@ -145,9 +148,6 @@ impl App {
                 self.path_queue.clear();
                 self.name.clear();
             }
-
-            KeyCode::PageUp => self.file_browser.goto_top(),
-            KeyCode::PageDown => self.file_browser.goto_bottom(),
 
             KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(speed_delta),
             KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(speed_delta * -1),
