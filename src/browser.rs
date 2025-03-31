@@ -39,7 +39,7 @@ impl FileBrowser {
         let mut directories = Vec::new();
         let mut metadata_list = Vec::new();
 
-        let playable_exts = ["flac", "mp3"];
+        let playable_exts = ["flac", "mp3", "wav"];
 
         for entry in fs::read_dir(&self.current_dir)? {
             if let Ok(entry) = entry {

@@ -18,15 +18,17 @@ impl SinkHandler {
 
     /// Plays a FLAC file and sets its initial volume
     pub fn play_file(&self, path: PathBuf, vol: i16) {
-        let file = File::open(path).expect("Failed to open file");
+        let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
-        let source = Decoder::new(reader).expect("Failed to decode audio");
+        let source = Decoder::new(reader).unwrap();
 
-        let new_sink = Sink::try_new(&self.stream_handle).expect("Failed to create sink");
-        new_sink.append(source);
+        let sink = Sink::try_new(&self.stream_handle).unwrap();
+        sink.append(source);
 
         // Store the sink in the player's state
-        *self.sink.lock().unwrap() = Some(new_sink);
+        *self.sink.lock().unwrap() = Some(sink);
+
+        // sink.sleep_until_end();
 
         self.set_volume(vol);
     }

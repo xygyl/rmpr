@@ -29,16 +29,23 @@ impl FileData {
     }
 
     pub fn get_file_data(&mut self, path: &PathBuf) {
-        let tags = Tag::default().read_from_path(path).unwrap();
+        let valid_exts = ["flac", "mp3", "m4a", "mp4"];
 
-        self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-        self.album = tags.album_title().map(|n| n.to_string());
-        self.artist = tags.artist().map(|n| n.to_string());
-        self.title = tags.title().map(|n| n.to_string());
-        self.year = tags.year();
-        self.duration_display = tags.duration().map(|d| FileData::sec_to_min_sec(d));
-        self.duration_as_secs = tags.duration();
-        self.track_number = tags.track_number();
+        if let Some(ext) = path.extension() {
+            if valid_exts.contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref()) {
+                let tags = Tag::default().read_from_path(path).unwrap();
+                self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
+                self.album = tags.album_title().map(|n| n.to_string());
+                self.artist = tags.artist().map(|n| n.to_string());
+                self.title = tags.title().map(|n| n.to_string());
+                self.year = tags.year();
+                self.duration_display = tags.duration().map(|d| FileData::sec_to_min_sec(d));
+                self.duration_as_secs = tags.duration();
+                self.track_number = tags.track_number();
+            } else {
+                self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
+            }
+        }
     }
 
     /// Display album or nothing
