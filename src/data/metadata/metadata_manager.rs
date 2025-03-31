@@ -1,4 +1,4 @@
-use crate::file_data::FileData;
+use crate::data::metadata::file_data::FileData;
 use std::path::PathBuf;
 
 /// Encapsulates metadata queue information for correct displaying

@@ -1,11 +1,9 @@
-mod browser;
-mod config;
-mod file_data;
-mod input_handler;
-mod metadata_manager;
-mod sink_handler;
+use crate::tui::tui::run_tui;
+
+mod data;
+mod handlers;
 mod tui;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tui::run_tui()
+    run_tui()
 }

@@ -1,7 +1,8 @@
 use crate::{
-    config::{load_config, ConfigData},
-    sink_handler::SinkHandler,
+    data::config::{load_config, ConfigData},
+    handlers::sink_handler::SinkHandler,
 };
+
 use rodio::OutputStream;
 use std::{path::PathBuf, sync::Arc, thread};
 

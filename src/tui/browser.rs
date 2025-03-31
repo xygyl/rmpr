@@ -1,6 +1,6 @@
-use crate::{
+use crate::data::{
     config::{load_config, ConfigData},
-    file_data::FileData,
+    metadata::file_data::FileData,
 };
 use ratatui::{
     style::{Color, Style},
