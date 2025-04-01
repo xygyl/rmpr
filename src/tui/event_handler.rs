@@ -109,27 +109,9 @@ impl App {
                             self.audio.append(element);
                         }
 
-                        self.data = self.meta_manager.pop_next().unwrap_or(FileData {
-                            raw_file: None,
-                            album: None,
-                            artist: None,
-                            title: None,
-                            year: None,
-                            duration_display: None,
-                            duration_as_secs: None,
-                            track_number: None,
-                        });
+                        self.data = self.meta_manager.pop_next().unwrap_or(FileData::new());
                     } else {
-                        self.data = FileData {
-                            raw_file: None,
-                            album: None,
-                            artist: None,
-                            title: None,
-                            year: None,
-                            duration_display: None,
-                            duration_as_secs: None,
-                            track_number: None,
-                        };
+                        self.data = FileData::new();
                     }
                 }
             }
