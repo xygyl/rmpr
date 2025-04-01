@@ -56,8 +56,8 @@ impl App {
                                 );
                                 self.audio.clear_sink();
                                 self.audio.play(&self.path_queue[0]);
-                                for element in self.path_queue.clone() {
-                                    self.audio.append(&element);
+                                for element in self.path_queue.iter().skip(1) {
+                                    self.audio.append(element);
                                 }
                                 self.meta_manager
                                     .update_current(FileData::new(), path, false);
