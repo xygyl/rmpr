@@ -103,15 +103,17 @@ impl App {
                     self.name.remove(0);
                     self.audio.clear_sink();
 
-                    if let Some(next_path) = self.path_queue.get(0) {
-                        self.audio.play(next_path);
-                        for element in self.path_queue.iter().skip(1) {
-                            self.audio.append(element);
+                    match self.path_queue.get(0) {
+                        Some(next_path) => {
+                            self.audio.play(next_path);
+                            for element in self.path_queue.iter().skip(1) {
+                                self.audio.append(element);
+                            }
+                            self.data = self.meta_manager.pop_next().unwrap_or(FileData::new());
                         }
-
-                        self.data = self.meta_manager.pop_next().unwrap_or(FileData::new());
-                    } else {
-                        self.data = FileData::new();
+                        None => {
+                            self.data = FileData::new();
+                        }
                     }
                 }
             }
