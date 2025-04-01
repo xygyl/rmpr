@@ -29,7 +29,8 @@ impl App {
                             0 => {
                                 self.audio.play(path);
 
-                                self.meta_manager.update_current(FileData::new(), path);
+                                self.meta_manager
+                                    .update_current(FileData::new(), path, true);
                                 self.data = self.meta_manager.current.clone();
 
                                 self.path_queue.push(path.clone());
@@ -58,7 +59,8 @@ impl App {
                                 for element in self.path_queue.clone() {
                                     self.audio.append(&element);
                                 }
-                                self.meta_manager.update_current(FileData::new(), path);
+                                self.meta_manager
+                                    .update_current(FileData::new(), path, false);
                                 self.data = self.meta_manager.current.clone();
                             }
                         }
@@ -73,7 +75,8 @@ impl App {
                             0 => {
                                 self.audio.play(path);
 
-                                self.meta_manager.update_current(FileData::new(), path);
+                                self.meta_manager
+                                    .update_current(FileData::new(), path, true);
                                 self.data = self.meta_manager.current.clone();
                             }
                             _ => {

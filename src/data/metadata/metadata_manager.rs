@@ -16,24 +16,32 @@ impl MetadataQueue {
         }
     }
 
-    /// Update the current metadata
-    pub fn update_current(&mut self, mut data: FileData, path: &PathBuf) {
+    /// Updates the current metadata
+    pub fn update_current(&mut self, mut data: FileData, path: &PathBuf, clear: bool) {
         data.get_file_data(path);
+        if clear {
+            self.queue.clear();
+        }
         self.queue.insert(0, data.clone());
         self.current = data;
     }
 
-    /// Add metadata for an appended file to the queue
+    /// Appends metadata for a queued song
     pub fn queue_metadata(&mut self, mut data: FileData, path: &PathBuf) {
         data.get_file_data(path);
         self.queue.push(data);
     }
 
-    /// Pop the next metadata from the queue if available
+    /// When skipping, remove the current metadata (index 0) and update current
     pub fn pop_next(&mut self) -> Option<FileData> {
         if !self.queue.is_empty() {
-            Some(self.queue.remove(1))
+            self.queue.remove(0);
+        }
+        if let Some(next) = self.queue.first() {
+            self.current = next.clone();
+            Some(next.clone())
         } else {
+            self.current = FileData::new();
             None
         }
     }
