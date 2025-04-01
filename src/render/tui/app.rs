@@ -3,8 +3,8 @@ use crate::{
         config::{load_config, ConfigData},
         metadata::{file_data::FileData, metadata_manager::MetadataQueue},
     },
-    handlers::input_handler::InputHandler,
-    tui::browser::FileBrowser,
+    handlers::input::InputHandler,
+    render::browser::FileBrowser,
 };
 use crossterm::{
     execute,

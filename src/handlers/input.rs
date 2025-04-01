@@ -1,6 +1,6 @@
 use crate::{
     data::config::{load_config, ConfigData},
-    handlers::sink_handler::SinkHandler,
+    handlers::sink::SinkHandler,
 };
 
 use rodio::OutputStream;

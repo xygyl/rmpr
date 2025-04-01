@@ -16,5 +16,5 @@ music_directory = "/home/xygyl/Music"
 [controls]
 audio_delta = 2
 speed_delta = 25
-speed_max = 200
-speed_min = 25
+speed_max   = 200
+speed_min   = 25

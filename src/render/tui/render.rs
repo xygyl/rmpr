@@ -1,4 +1,4 @@
-use crate::tui::tui::App;
+use crate::render::tui::app::App;
 use ratatui::{
     style::{Color, Style},
     symbols::border,

@@ -1,2 +1,2 @@
-pub mod input_handler;
-pub mod sink_handler;
+pub mod input;
+pub mod sink;
