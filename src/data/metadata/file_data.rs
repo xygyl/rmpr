@@ -51,7 +51,7 @@ impl FileData {
 
     /// Display album or nothing
     pub fn display_album(&self) -> String {
-        match self.album.clone() {
+        match self.album.as_ref() {
             Some(display) => format!("{}", display),
             None => "".to_string(),
         }
@@ -59,7 +59,7 @@ impl FileData {
 
     /// Display artists or nothing
     pub fn display_artist(&self) -> String {
-        match self.artist.clone() {
+        match self.artist.as_ref() {
             Some(artist) => format!("{}", artist),
             None => "".to_string(),
         }
@@ -67,7 +67,7 @@ impl FileData {
 
     /// Display title, or raw file, or nothing if neither is found
     pub fn display_title(&self) -> String {
-        match self.title.clone() {
+        match self.title.as_ref() {
             Some(title) => format!("{}", title),
             None => match self.raw_file.clone() {
                 Some(raw_file) => format!("{}", raw_file),

@@ -144,8 +144,8 @@ impl FileBrowser {
 
     /// Lists all items in the directory; displaying directories as their name and files as their metadata name
     pub fn list_items(&self) -> Vec<ListItem> {
-        let filesystem_directory = self.config.colors.filesystem_directory.clone();
-        let filesystem_file = self.config.colors.filesystem_file.clone();
+        let filesystem_directory = &self.config.colors.filesystem_directory;
+        let filesystem_file = &self.config.colors.filesystem_file;
 
         self.entries
             .iter()
@@ -164,9 +164,9 @@ impl FileBrowser {
                 };
 
                 let style = if entry.is_dir() {
-                    Style::default().fg(Color::from_str(&filesystem_directory).unwrap())
+                    Style::default().fg(Color::from_str(filesystem_directory).unwrap())
                 } else {
-                    Style::default().fg(Color::from_str(&filesystem_file).unwrap())
+                    Style::default().fg(Color::from_str(filesystem_file).unwrap())
                 };
 
                 ListItem::new(display_name).style(style)
