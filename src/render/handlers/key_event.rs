@@ -41,7 +41,6 @@ impl App {
             KeyCode::Char('c') => {
                 self.audio.clear_sink();
                 self.path_queue.clear();
-                self.name.clear();
                 self.data = FileData::new();
             }
 

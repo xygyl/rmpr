@@ -33,8 +33,6 @@ impl SinkHandler {
         // Store the sink in the player's state
         *self.sink.lock().unwrap() = Some(sink);
 
-        // sink.sleep_until_end();
-
         self.set_volume(vol);
     }
 

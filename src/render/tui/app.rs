@@ -33,7 +33,6 @@ pub struct App {
     pub audio: InputHandler,
     pub data: FileData,
     pub path_queue: Vec<PathBuf>,
-    pub name: Vec<String>,
     pub exit: bool,
 }
 
@@ -54,7 +53,6 @@ impl App {
             audio: InputHandler::new()?,
             data: FileData::new(),
             path_queue: Vec::new(),
-            name: Vec::new(),
             exit: false,
         })
     }
