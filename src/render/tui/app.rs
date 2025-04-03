@@ -7,11 +7,11 @@ use crate::{
     render::browser::FileBrowser,
 };
 use crossterm::{
-    execute,
+    event, execute,
     terminal::{disable_raw_mode, LeaveAlternateScreen},
 };
 use ratatui::DefaultTerminal;
-use std::{env, io, path::PathBuf};
+use std::{env, io, path::PathBuf, time::Duration};
 
 /// Runs the TUI application
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,6 +33,7 @@ pub struct App {
     pub audio: InputHandler,
     pub data: FileData,
     pub path_queue: Vec<PathBuf>,
+    pub seekbar: f64,
     pub exit: bool,
 }
 
@@ -53,15 +54,20 @@ impl App {
             audio: InputHandler::new()?,
             data: FileData::new(),
             path_queue: Vec::new(),
+            seekbar: f64::MIN_POSITIVE,
             exit: false,
         })
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        let timeout = Duration::from_millis(1);
         while !self.exit {
             self.file_browser.update_entries()?;
+            if event::poll(timeout)? {
+                self.handle_events()?;
+            }
+            self.update();
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
         }
         Ok(())
     }
