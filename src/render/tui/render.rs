@@ -12,6 +12,8 @@ use std::{path::PathBuf, str::FromStr};
 impl App {
     pub fn update(&mut self) {
         if self.audio.sink_len() == 0 {
+            self.audio.clear_sink();
+            self.seekbar = 0.0;
             return;
         }
         let duration = self.data.duration_as_secs.unwrap_or(1.0);
@@ -90,11 +92,6 @@ impl App {
                     format!(" {} ", self.data.display_track_number()),
                     Style::default().fg(App::get_color(testing_color)),
                 ),
-                Span::styled("┃", Style::default().fg(App::get_color(border))),
-                Span::styled(
-                    format!(" {} ", self.data.display_duration_display()),
-                    Style::default().fg(App::get_color(testing_color)),
-                ),
                 Span::styled("┣", Style::default().fg(App::get_color(border))),
             ]),
         ];
@@ -117,25 +114,20 @@ impl App {
         ];
 
         let top_left_block_vec = vec![
-            Line::from(vec![]),
+            Line::from(vec![Span::styled(
+                if self.audio.sink_len() == 0 {
+                    String::new()
+                } else {
+                    let pos = self.audio.sink_pos();
+                    format!(" {}/{}", pos, self.data.display_duration_display())
+                },
+                Style::default().fg(App::get_color(testing_color)),
+            )]),
             Line::from(vec![Span::styled(
                 format!(" x{:<4}", (self.audio.play_speed as f32) / 100.0),
                 Style::default().fg(App::get_color(playback_speed)),
             )]),
         ];
-
-        let progress_vec = Line::from(vec![
-            Span::styled("┫", Style::default().fg(App::get_color(border))),
-            Span::styled(
-                format!(
-                    "{}/{:.0}",
-                    self.audio.sink_pos(),
-                    self.data.duration_as_secs.unwrap_or(0.0)
-                ),
-                Style::default().fg(App::get_color(testing_color)),
-            ),
-            Span::styled("┣", Style::default().fg(App::get_color(border))),
-        ]);
 
         /////////////////////////
         // RENDERING VARIABLES //
@@ -179,8 +171,7 @@ impl App {
 
         let progress_block = Block::bordered()
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)))
-            .title_bottom(progress_vec.centered());
+            .border_style(Style::default().fg(App::get_color(border)));
 
         let progress = Gauge::default()
             .gauge_style(Style::default().fg(App::get_color(directory_path)))
@@ -201,9 +192,9 @@ impl App {
         let [top, mid, bot] = vertical.areas(frame.area());
 
         let horizontal_top = Layout::horizontal([
-            Constraint::Length(8),
+            Constraint::Length(15),
             Constraint::Min(0),
-            Constraint::Length(8),
+            Constraint::Length(15),
         ]);
         let horizontal_mid =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
