@@ -35,11 +35,11 @@ impl App {
             current_dir
         };
 
-        ////////////////////////////
-        // LEFT BLOCK BORDER VECS //
-        ////////////////////////////
-        // Displays the CWD
-        let top_left = Line::from(vec![
+        ///////////////
+        // TEXT VECS //
+        ///////////////
+
+        let cwd = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
             Span::styled(
                 format!("{}", display_path),
@@ -48,108 +48,71 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
         ]);
 
-        // Displays the current play speed
-        let top_right = Line::from(vec![
-            Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!("x{:<4}", (self.audio.play_speed as f32) / 100.0),
-                Style::default().fg(Color::from_str(playback_speed).unwrap()),
-            ),
-            Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
-        ]);
+        let top_mid_block_vec = vec![
+            Line::from(vec![
+                Span::styled("┫ ", Style::default().fg(Color::from_str(border).unwrap())),
+                Span::styled(
+                    format!("{}", self.data.display_artist()),
+                    Style::default().fg(Color::from_str(testing_color).unwrap()),
+                ),
+                Span::styled(" ┃ ", Style::default().fg(Color::from_str(border).unwrap())),
+                Span::styled(
+                    format!("{}", self.data.display_title()),
+                    Style::default().fg(Color::from_str(currently_playing).unwrap()),
+                ),
+                Span::styled(" ┣", Style::default().fg(Color::from_str(border).unwrap())),
+            ]),
+            Line::from(vec![
+                Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
+                Span::styled(
+                    format!(" {} ", self.data.display_album()),
+                    Style::default().fg(Color::from_str(testing_color).unwrap()),
+                ),
+                Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
+                Span::styled(
+                    format!(" {} ", self.data.display_year()),
+                    Style::default().fg(Color::from_str(testing_color).unwrap()),
+                ),
+                Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
+                Span::styled(
+                    format!(" {} ", self.data.display_track_number()),
+                    Style::default().fg(Color::from_str(testing_color).unwrap()),
+                ),
+                Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
+                Span::styled(
+                    format!(" {} ", self.data.display_duration_display()),
+                    Style::default().fg(Color::from_str(testing_color).unwrap()),
+                ),
+                Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
+            ]),
+        ];
 
-        // Displays the title of the currently playing song
-        let bottom_left = Line::from(vec![
-            Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!("{}", self.data.display_title()),
-                Style::default().fg(Color::from_str(currently_playing).unwrap()),
-            ),
-            Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
-        ]);
-
-        // For metadata and stats display testing
-        let bottom_center = Line::from(vec![
-            Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!(" {} ", self.data.display_track_number()),
-                Style::default().fg(Color::from_str(testing_color).unwrap()),
-            ),
-            Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!(" {} ", self.data.display_artist()),
-                Style::default().fg(Color::from_str(testing_color).unwrap()),
-            ),
-            Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!(" {} ", self.data.display_album()),
-                Style::default().fg(Color::from_str(testing_color).unwrap()),
-            ),
-            Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!(" {} ", self.data.display_year()),
-                Style::default().fg(Color::from_str(testing_color).unwrap()),
-            ),
-            Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!(" {} ", self.data.display_duration_display()),
-                Style::default().fg(Color::from_str(testing_color).unwrap()),
-            ),
-            Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
-        ]);
-
-        // Displays audio playing information
-        let bottom_right = Line::from(vec![
-            Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!("{}", if self.audio.paused { "P" } else { "-" }),
-                Style::default().fg(Color::from_str(paused).unwrap()),
-            ),
-            Span::styled(
-                format!("{}", if self.audio.muted { "M" } else { "-" }),
-                Style::default().fg(Color::from_str(muted).unwrap()),
-            ),
-            Span::styled("┃", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!("{:>3}%", self.audio.vol),
+        let top_right_block_vec = vec![
+            Line::from(vec![Span::styled(
+                format!("{:>3}% ", self.audio.vol),
                 Style::default().fg(Color::from_str(volume).unwrap()),
-            ),
-            Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
-        ]);
+            )]),
+            Line::from(vec![
+                Span::styled(
+                    format!("{}", if self.audio.paused { "P" } else { "-" }),
+                    Style::default().fg(Color::from_str(paused).unwrap()),
+                ),
+                Span::styled(
+                    format!("{} ", if self.audio.muted { "M" } else { "-" }),
+                    Style::default().fg(Color::from_str(muted).unwrap()),
+                ),
+            ]),
+        ];
 
-        /////////////////////////
-        // RENDERING VARIABLES //
-        /////////////////////////
-        let left_block = Block::new()
-            .border_set(border::THICK)
-            .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
-            .border_style(Style::default().fg(Color::from_str(border).unwrap()))
-            .title_top(top_left.left_aligned())
-            .title_top(top_right.right_aligned())
-            .title_bottom(bottom_left.left_aligned())
-            .title_bottom(bottom_center.centered())
-            .title_bottom(bottom_right.right_aligned());
+        let top_left_block_vec = vec![
+            Line::from(vec![]),
+            Line::from(vec![Span::styled(
+                format!(" x{:<4}", (self.audio.play_speed as f32) / 100.0),
+                Style::default().fg(Color::from_str(playback_speed).unwrap()),
+            )]),
+        ];
 
-        let list = List::new(self.file_browser.list_items())
-            .block(left_block)
-            .highlight_style(Style::default().fg(Color::from_str(highlight_color).unwrap()));
-
-        let middle_right = symbols::border::Set {
-            top_left: symbols::line::THICK_HORIZONTAL_DOWN,
-            bottom_left: symbols::line::THICK_HORIZONTAL_UP,
-            ..symbols::border::THICK
-        };
-
-        let right_block = Block::new()
-            .border_set(middle_right)
-            .borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT)
-            .border_style(Style::default().fg(Color::from_str(border).unwrap()));
-
-        let block1 = Block::bordered()
-            .border_style(Style::default().fg(Color::from_str(border).unwrap()))
-            .border_set(border::THICK);
-
-        let progress_top = Line::from(vec![
+        let progress_vec = Line::from(vec![
             Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
             Span::styled(
                 format!(
@@ -162,10 +125,50 @@ impl App {
             Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
         ]);
 
-        let progress_block = Block::bordered()
-            .border_style(Style::default().fg(Color::from_str(border).unwrap()))
+        /////////////////////////
+        // RENDERING VARIABLES //
+        /////////////////////////
+
+        let mid_left_block = Block::new()
             .border_set(border::THICK)
-            .title_bottom(progress_top.centered());
+            .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()))
+            .title_top(cwd);
+
+        let list = List::new(self.file_browser.list_items())
+            .block(mid_left_block)
+            .highlight_style(Style::default().fg(Color::from_str(highlight_color).unwrap()));
+
+        let mid_right_set = symbols::border::Set {
+            top_left: symbols::line::THICK_HORIZONTAL_DOWN,
+            bottom_left: symbols::line::THICK_HORIZONTAL_UP,
+            ..symbols::border::THICK
+        };
+
+        let mid_right_block = Block::new()
+            .border_set(mid_right_set)
+            .borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT)
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()));
+
+        let top_center_left_block = Block::bordered()
+            .border_set(border::THICK)
+            .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()));
+
+        let top_center_mid_block = Block::bordered()
+            .border_set(border::THICK)
+            .borders(Borders::TOP | Borders::BOTTOM)
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()));
+
+        let top_center_right_block = Block::bordered()
+            .border_set(border::THICK)
+            .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()));
+
+        let progress_block = Block::bordered()
+            .border_set(border::THICK)
+            .border_style(Style::default().fg(Color::from_str(border).unwrap()))
+            .title_bottom(progress_vec.centered());
 
         let progress = Gauge::default()
             .gauge_style(Style::default().fg(Color::from_str(directory_path).unwrap()))
@@ -175,31 +178,55 @@ impl App {
             )
             .use_unicode(true)
             .label("")
-            .block(progress_block.clone());
+            .block(progress_block);
 
         //////////////////////////
         // LAYOUT AND RENDERING //
         //////////////////////////
+
         let vertical = Layout::vertical([
-            Constraint::Length(7),
+            Constraint::Length(4),
             Constraint::Min(0),
             Constraint::Length(3),
         ]);
         let [top, mid, bot] = vertical.areas(frame.area());
 
-        let horizontal =
+        let horizontal_top = Layout::horizontal([
+            Constraint::Length(8),
+            Constraint::Min(0),
+            Constraint::Length(8),
+        ]);
+        let horizontal_mid =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [left, right] = horizontal.areas(mid);
+        let [top_left, top_center, top_right] = horizontal_top.areas(top);
+        let [mid_left, mid_right] = horizontal_mid.areas(mid);
 
-        frame.render_stateful_widget(list, left, &mut self.file_browser.list_state.clone());
+        match self.audio.sink_len() {
+            0 => frame.render_widget(Paragraph::new("").block(top_center_mid_block), top_center),
+            _ => frame.render_widget(
+                Paragraph::new(top_mid_block_vec)
+                    .block(top_center_mid_block)
+                    .alignment(ratatui::layout::Alignment::Center),
+                top_center,
+            ),
+        }
+        frame.render_widget(
+            Paragraph::new(top_left_block_vec)
+                .block(top_center_left_block)
+                .alignment(ratatui::layout::Alignment::Left),
+            top_left,
+        );
+        frame.render_widget(
+            Paragraph::new(top_right_block_vec)
+                .block(top_center_right_block)
+                .alignment(ratatui::layout::Alignment::Right),
+            top_right,
+        );
+        frame.render_stateful_widget(list, mid_left, &mut self.file_browser.list_state.clone());
+        frame.render_widget(
+            Paragraph::new("queue info here").block(mid_right_block),
+            mid_right,
+        );
         frame.render_widget(progress, bot);
-        frame.render_widget(
-            Paragraph::new("queue info here").block(right_block.clone()),
-            right,
-        );
-        frame.render_widget(
-            Paragraph::new("metadata info here").block(block1.clone()),
-            top,
-        );
     }
 }
