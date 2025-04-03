@@ -1,11 +1,5 @@
 use rodio::{Decoder, OutputStreamHandle, Sink};
-use std::{
-    fs::File,
-    io::BufReader,
-    path::PathBuf,
-    sync::Mutex,
-    // time::Duration
-};
+use std::{fs::File, io::BufReader, path::PathBuf, sync::Mutex, time::Duration};
 
 /// Encapsulates an audio sink and an output stream handle
 pub struct SinkHandler {
@@ -68,20 +62,20 @@ impl SinkHandler {
     }
 
     /// Gets the sink's position in seconds
-    /* pub fn sink_pos(&self) -> u64 {
+    pub fn sink_pos(&self) -> u64 {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
             sink.get_pos().as_secs()
         } else {
             Duration::new(0, 0).as_secs()
         }
-    } */
+    }
 
     /// Appends source to sink
     pub fn append_to_sink(&self, path: PathBuf, vol: i16) {
-        let file = File::open(path).expect("Failed to open file");
+        let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
-        let source = Decoder::new(reader).expect("Failed to decode audio");
+        let source = Decoder::new(reader).unwrap();
 
         {
             let sink_guard = self.sink.lock().unwrap();
