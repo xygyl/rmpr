@@ -45,14 +45,6 @@ impl SinkHandler {
         }
     }
 
-    /// Sets the playback speed
-    pub fn set_play_speed(&self, mag: i16) {
-        let sink_guard = self.sink.lock().unwrap();
-        if let Some(ref sink) = *sink_guard {
-            sink.set_speed((mag as f32) / 100.0);
-        }
-    }
-
     /// Sets the playback volume
     pub fn set_volume(&self, mag: i16) {
         let sink_guard = self.sink.lock().unwrap();
@@ -64,10 +56,9 @@ impl SinkHandler {
     /// Gets the sink's position in seconds
     pub fn sink_pos(&self) -> u64 {
         let sink_guard = self.sink.lock().unwrap();
-        if let Some(ref sink) = *sink_guard {
-            sink.get_pos().as_secs()
-        } else {
-            Duration::new(0, 0).as_secs()
+        match &*sink_guard {
+            Some(sink) => sink.get_pos().as_secs(),
+            None => Duration::new(0, 0).as_secs(),
         }
     }
 
@@ -108,10 +99,9 @@ impl SinkHandler {
     /// Returns how many elements are in the sink
     pub fn get_len(&self) -> usize {
         let sink_guard = self.sink.lock().unwrap();
-        if let Some(ref sink) = *sink_guard {
-            sink.len()
-        } else {
-            0
+        match &*sink_guard {
+            Some(sink) => sink.len(),
+            None => 0,
         }
     }
 }

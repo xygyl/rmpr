@@ -6,12 +6,17 @@ use std::{fs, path::PathBuf};
 #[serde(default)]
 pub struct Colors {
     pub border: String,
-    pub currently_playing: String,
-    pub directory_path: String,
-    pub filesystem_directory: String,
-    pub filesystem_file: String,
+    pub artist: String,
+    pub title: String,
+    pub album: String,
+    pub year: String,
+    pub track_num: String,
+    pub seekbar: String,
+    pub timestamp: String,
+    pub fs_directory: String,
+    pub fs_file: String,
     pub highlight_color: String,
-    pub muted: String,
+    pub options: String,
     pub paused: String,
     pub playback_speed: String,
     pub volume: String,
@@ -21,12 +26,17 @@ impl Default for Colors {
     fn default() -> Self {
         Colors {
             border: "#FFFFFF".to_string(),
-            currently_playing: "#FFFF00".to_string(),
-            directory_path: "#00FF00".to_string(),
-            filesystem_directory: "#598EFF".to_string(),
-            filesystem_file: "#FFFFFF".to_string(),
+            artist: "#FF0000".to_string(),
+            title: "#FF0000".to_string(),
+            album: "#FF0000".to_string(),
+            year: "#FF0000".to_string(),
+            track_num: "#FF0000".to_string(),
+            seekbar: "#FF0000".to_string(),
+            timestamp: "#00FF00".to_string(),
+            fs_directory: "#598EFF".to_string(),
+            fs_file: "#FFFFFF".to_string(),
             highlight_color: "#FF0000".to_string(),
-            muted: "#FF0000".to_string(),
+            options: "#FF0000".to_string(),
             paused: "#00FF00".to_string(),
             playback_speed: "#598EFF".to_string(),
             volume: "#598EFF".to_string(),
@@ -58,20 +68,12 @@ impl Default for Directories {
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Controls {
-    pub audio_delta: i16,
-    pub speed_delta: i16,
-    pub speed_max: i16,
-    pub speed_min: i16,
+    pub vol_delta: i16,
 }
 
 impl Default for Controls {
     fn default() -> Self {
-        Controls {
-            audio_delta: 2,
-            speed_delta: 25,
-            speed_max: 200,
-            speed_min: 25,
-        }
+        Controls { vol_delta: 2 }
     }
 }
 

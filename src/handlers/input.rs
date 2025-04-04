@@ -1,33 +1,24 @@
-use crate::{
-    data::config::{load_config, ConfigData},
-    handlers::sink::SinkHandler,
-};
+use crate::handlers::sink::SinkHandler;
 
 use rodio::OutputStream;
 use std::{path::PathBuf, sync::Arc, thread};
 
 /// Encapsulates audio-related state and controls.
 pub struct InputHandler {
-    pub config: ConfigData,
     pub _stream: OutputStream,
     pub audio_player: Arc<SinkHandler>,
-    pub play_speed: i16,
     pub vol: i16,
     pub paused: bool,
-    pub muted: bool,
 }
 impl InputHandler {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let (stream, stream_handle) = OutputStream::try_default()?;
         let audio_player = Arc::new(SinkHandler::new(stream_handle));
         Ok(Self {
-            config: load_config(),
             _stream: stream,
             audio_player,
-            play_speed: 100,
             vol: 100,
             paused: false,
-            muted: false,
         })
     }
 
@@ -39,8 +30,6 @@ impl InputHandler {
         thread::spawn(move || {
             sink_handler.play_file(path_clone, current_vol);
         });
-        self.play_speed = 100;
-        self.muted = false;
         self.paused = false;
     }
 
@@ -62,38 +51,6 @@ impl InputHandler {
     /// Removes all currently loaded Sources from the Sink, and pauses it
     pub fn clear_sink(&self) {
         self.audio_player.clear();
-    }
-
-    /// Adjusts the playback speed by a given delta
-    pub fn adjust_speed(&mut self, delta: i16) {
-        let max = self.config.controls.speed_max;
-        let min = self.config.controls.speed_min;
-
-        let new_speed = self.play_speed + delta;
-        if new_speed >= min && new_speed <= max {
-            self.play_speed = new_speed;
-            self.audio_player.set_play_speed(self.play_speed);
-        }
-    }
-
-    /// Resets the playback speed to normal
-    pub fn reset_speed(&mut self) {
-        self.play_speed = 100;
-        self.audio_player.set_play_speed(self.play_speed);
-    }
-
-    /// Toggles mute on and off
-    pub fn toggle_mute(&mut self) {
-        match self.muted {
-            true => {
-                self.audio_player.set_volume(self.vol);
-                self.muted = false;
-            }
-            false => {
-                self.audio_player.set_volume(0);
-                self.muted = true;
-            }
-        }
     }
 
     /// Toggles between play and pause

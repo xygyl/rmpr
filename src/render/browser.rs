@@ -50,19 +50,23 @@ impl FileBrowser {
                     }
                 }
 
-                if path.is_dir() {
-                    directories.push(path);
-                } else if let Some(ext) = path.extension() {
-                    if playable_exts.contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref())
-                    {
-                        let mut file_data = FileData::new();
-                        file_data.get_file_data(&path);
-                        let track_number = file_data.track_number.unwrap_or(0);
-                        let title = file_data
-                            .title
-                            .unwrap_or_else(|| path.to_string_lossy().to_string());
+                match path.is_dir() {
+                    true => directories.push(path),
+                    false => {
+                        if let Some(ext) = path.extension() {
+                            if playable_exts
+                                .contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref())
+                            {
+                                let mut file_data = FileData::new();
+                                file_data.get_file_data(&path);
+                                let track_number = file_data.track_number.unwrap_or(0);
+                                let title = file_data
+                                    .title
+                                    .unwrap_or_else(|| path.to_string_lossy().to_string());
 
-                        metadata_list.push((track_number, title, path));
+                                metadata_list.push((track_number, title, path));
+                            }
+                        }
                     }
                 }
             }
@@ -79,10 +83,9 @@ impl FileBrowser {
             .chain(playable_files.into_iter())
             .collect();
 
-        self.list_state.select(if self.entries.is_empty() {
-            None
-        } else {
-            Some(self.selected)
+        self.list_state.select(match self.entries.is_empty() {
+            true => None,
+            false => Some(self.selected),
         });
 
         Ok(())
@@ -93,10 +96,9 @@ impl FileBrowser {
         if self.entries.is_empty() {
             return;
         }
-        if self.selected == 0 {
-            self.selected = self.entries.len() - 1;
-        } else {
-            self.selected -= 1;
+        match self.selected {
+            0 => self.selected = self.entries.len() - 1,
+            _ => self.selected -= 1,
         }
         self.sel_map.insert(self.current_dir.clone(), self.selected);
     }
@@ -106,10 +108,9 @@ impl FileBrowser {
         if self.entries.is_empty() {
             return;
         }
-        if self.selected < self.entries.len() - 1 {
-            self.selected += 1;
-        } else {
-            self.selected = 0;
+        match self.selected < self.entries.len() - 1 {
+            true => self.selected += 1,
+            false => self.selected = 0,
         }
         self.sel_map.insert(self.current_dir.clone(), self.selected);
     }
@@ -144,29 +145,29 @@ impl FileBrowser {
 
     /// Lists all items in the directory; displaying directories as their name and files as their metadata name
     pub fn list_items(&self) -> Vec<ListItem> {
-        let filesystem_directory = &self.config.colors.filesystem_directory;
-        let filesystem_file = &self.config.colors.filesystem_file;
+        let fs_directory = &self.config.colors.fs_directory;
+        let fs_file = &self.config.colors.fs_file;
 
         self.entries
             .iter()
             .map(|entry| {
-                let display_name = if entry.is_dir() {
-                    entry
+                let display_name = match entry.is_dir() {
+                    true => entry
                         .file_name()
-                        .map(|s| s.to_string_lossy().to_string())
-                        .unwrap_or_else(|| "Unknown".to_string())
-                } else {
-                    let mut file_data = FileData::new();
-                    file_data.get_file_data(entry);
-                    file_data
-                        .title
-                        .unwrap_or(file_data.raw_file.unwrap_or("Unknown".to_string()))
+                        .map(|s| format!("[{}]", s.to_string_lossy().to_string()))
+                        .unwrap_or_else(|| "Unknown".to_string()),
+                    false => {
+                        let mut file_data = FileData::new();
+                        file_data.get_file_data(entry);
+                        file_data
+                            .title
+                            .unwrap_or(file_data.raw_file.unwrap_or("Unknown".to_string()))
+                    }
                 };
 
-                let style = if entry.is_dir() {
-                    Style::default().fg(Color::from_str(filesystem_directory).unwrap())
-                } else {
-                    Style::default().fg(Color::from_str(filesystem_file).unwrap())
+                let style = match entry.is_dir() {
+                    true => Style::default().fg(Color::from_str(fs_directory).unwrap()),
+                    false => Style::default().fg(Color::from_str(fs_file).unwrap()),
                 };
 
                 ListItem::new(display_name).style(style)

@@ -32,20 +32,27 @@ impl FileData {
     pub fn get_file_data(&mut self, path: &PathBuf) {
         let valid_exts = ["flac", "mp3", "m4a", "mp4"];
 
-        if let Some(ext) = path.extension() {
-            if valid_exts.contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref()) {
-                let tags = Tag::default().read_from_path(path).unwrap();
-                self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-                self.album = tags.album_title().map(|n| n.to_string());
-                self.artist = tags.artist().map(|n| n.to_string());
-                self.title = tags.title().map(|n| n.to_string());
-                self.year = tags.year();
-                self.duration_display = tags.duration().map(|d| FileData::sec_to_min_sec(d));
-                self.duration_as_secs = tags.duration();
-                self.track_number = tags.track_number();
-            } else {
-                self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
+        match path.extension() {
+            Some(ext) => {
+                let file_ext = ext.to_string_lossy().to_ascii_lowercase();
+                match valid_exts.contains(&file_ext.as_str()) {
+                    true => {
+                        let tags = Tag::default().read_from_path(path).unwrap();
+                        self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string());
+                        self.album = tags.album_title().map(|n| n.to_string());
+                        self.artist = tags.artist().map(|n| n.to_string());
+                        self.title = tags.title().map(|n| n.to_string());
+                        self.year = tags.year();
+                        self.duration_display = tags.duration().map(FileData::sec_to_min_sec);
+                        self.duration_as_secs = tags.duration();
+                        self.track_number = tags.track_number();
+                    }
+                    false => {
+                        self.raw_file = path.file_name().map(|n| n.to_string_lossy().to_string())
+                    }
+                }
             }
+            None => {}
         }
     }
 

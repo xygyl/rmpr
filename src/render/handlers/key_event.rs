@@ -16,8 +16,7 @@ impl App {
 
     /// Handles key events
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
-        let speed_delta = self.config.controls.speed_delta;
-        let audio_delta = self.config.controls.audio_delta;
+        let vol_delta = self.config.controls.vol_delta;
 
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
@@ -44,14 +43,8 @@ impl App {
                 self.data = FileData::new();
             }
 
-            KeyCode::Char('.') | KeyCode::Char('>') => self.audio.adjust_speed(speed_delta),
-            KeyCode::Char(',') | KeyCode::Char('<') => self.audio.adjust_speed(speed_delta * -1),
-            KeyCode::Char('/') => self.audio.reset_speed(),
-
-            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(audio_delta),
-            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(audio_delta * -1),
-            KeyCode::Char('m') => self.audio.toggle_mute(),
-
+            KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(vol_delta),
+            KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(vol_delta * -1),
             KeyCode::Char('p') => self.audio.toggle_pause(),
 
             _ => {}

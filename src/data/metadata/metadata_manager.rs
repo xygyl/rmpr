@@ -32,17 +32,20 @@ impl MetadataQueue {
         self.queue.push(data);
     }
 
-    /// When skipping, remove the current metadata (index 0) and update current
+    /// When skipping, remove the current metadata (index 0), set it to the next in the vec, then update current
     pub fn pop_next(&mut self) -> Option<FileData> {
         if !self.queue.is_empty() {
             self.queue.remove(0);
         }
-        if let Some(next) = self.queue.first() {
-            self.current = next.clone();
-            Some(next.clone())
-        } else {
-            self.current = FileData::new();
-            None
+        match self.queue.first() {
+            Some(next) => {
+                self.current = next.clone();
+                Some(next.clone())
+            }
+            None => {
+                self.current = FileData::new();
+                None
+            }
         }
     }
 }

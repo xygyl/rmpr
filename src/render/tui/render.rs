@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Gauge, List, Paragraph},
     Frame,
 };
-use std::{path::PathBuf, str::FromStr};
+use std::str::FromStr;
 
 impl App {
     pub fn update(&mut self) {
@@ -24,55 +24,37 @@ impl App {
         Color::from_str(color).unwrap_or(Color::Reset)
     }
 
-    fn format_display_path(path: &PathBuf) -> String {
-        let current_dir = path.to_string_lossy().to_string();
-        if let Some(home) = dirs::home_dir() {
-            let home_str = home.to_string_lossy();
-            if current_dir.starts_with(&*home_str) {
-                return format!("~{}", &current_dir[home_str.len()..]);
-            }
-        }
-        current_dir
-    }
-
     pub fn draw(&self, frame: &mut Frame) {
-        let display_path = App::format_display_path(&self.file_browser.current_dir);
-
         let border = &self.config.colors.border;
-        let currently_playing = &self.config.colors.currently_playing;
-        let directory_path = &self.config.colors.directory_path;
+        let artist = &self.config.colors.artist;
+        let title = &self.config.colors.title;
+        let album = &self.config.colors.album;
+        let year = &self.config.colors.year;
+        let track_num = &self.config.colors.track_num;
+        let seekbar = &self.config.colors.seekbar;
         let highlight_color = &self.config.colors.highlight_color;
-        let muted = &self.config.colors.muted;
+        let options = &self.config.colors.options;
         let paused = &self.config.colors.paused;
-        let playback_speed = &self.config.colors.playback_speed;
         let volume = &self.config.colors.volume;
+        let timestamp = &self.config.colors.timestamp;
 
-        let testing_color = "#DDE1FF";
+        let _testing_color = "#DDE1FF";
 
         ///////////////
         // TEXT VECS //
         ///////////////
-
-        let cwd = Line::from(vec![
-            Span::styled("┫", Style::default().fg(Color::from_str(border).unwrap())),
-            Span::styled(
-                format!("{}", display_path),
-                Style::default().fg(App::get_color(directory_path)),
-            ),
-            Span::styled("┣", Style::default().fg(Color::from_str(border).unwrap())),
-        ]);
 
         let top_mid_block_vec = vec![
             Line::from(vec![
                 Span::styled("┫ ", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!("{}", self.data.display_artist()),
-                    Style::default().fg(App::get_color(testing_color)),
+                    Style::default().fg(App::get_color(artist)),
                 ),
                 Span::styled(" ┃ ", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!("{}", self.data.display_title()),
-                    Style::default().fg(App::get_color(currently_playing)),
+                    Style::default().fg(App::get_color(title)),
                 ),
                 Span::styled(" ┣", Style::default().fg(App::get_color(border))),
             ]),
@@ -80,17 +62,17 @@ impl App {
                 Span::styled("┫", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!(" {} ", self.data.display_album()),
-                    Style::default().fg(App::get_color(testing_color)),
+                    Style::default().fg(App::get_color(album)),
                 ),
                 Span::styled("┃", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!(" {} ", self.data.display_year()),
-                    Style::default().fg(App::get_color(testing_color)),
+                    Style::default().fg(App::get_color(year)),
                 ),
                 Span::styled("┃", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!(" {} ", self.data.display_track_number()),
-                    Style::default().fg(App::get_color(testing_color)),
+                    Style::default().fg(App::get_color(track_num)),
                 ),
                 Span::styled("┣", Style::default().fg(App::get_color(border))),
             ]),
@@ -102,30 +84,40 @@ impl App {
                 Style::default().fg(App::get_color(volume)),
             )]),
             Line::from(vec![
-                Span::styled(
-                    format!("{}", if self.audio.paused { "P" } else { "-" }),
-                    Style::default().fg(App::get_color(paused)),
-                ),
-                Span::styled(
-                    format!("{} ", if self.audio.muted { "M" } else { "-" }),
-                    Style::default().fg(App::get_color(muted)),
-                ),
+                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("- "), Style::default().fg(App::get_color(options))),
             ]),
         ];
 
         let top_left_block_vec = vec![
             Line::from(vec![Span::styled(
-                if self.audio.sink_len() == 0 {
-                    String::new()
-                } else {
-                    let pos = self.audio.sink_pos();
-                    format!(" {}/{}", pos, self.data.display_duration_display())
+                match self.audio.sink_len() {
+                    0 => String::new(),
+                    _ => {
+                        let pos = self.audio.sink_pos();
+                        format!(" {}/{}", pos, self.data.display_duration_display())
+                    }
                 },
-                Style::default().fg(App::get_color(testing_color)),
+                Style::default().fg(App::get_color(timestamp)),
             )]),
             Line::from(vec![Span::styled(
-                format!(" x{:<4}", (self.audio.play_speed as f32) / 100.0),
-                Style::default().fg(App::get_color(playback_speed)),
+                format!(
+                    " {}",
+                    match self.audio.sink_len() {
+                        0 => {
+                            "stopped"
+                        }
+                        _ => match self.audio.paused {
+                            true => "paused",
+                            false => "playing",
+                        },
+                    }
+                ),
+                Style::default().fg(App::get_color(paused)),
             )]),
         ];
 
@@ -136,8 +128,7 @@ impl App {
         let mid_left_block = Block::new()
             .border_set(border::THICK)
             .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
-            .border_style(Style::default().fg(App::get_color(border)))
-            .title_top(cwd);
+            .border_style(Style::default().fg(App::get_color(border)));
 
         let list = List::new(self.file_browser.list_items())
             .block(mid_left_block)
@@ -174,7 +165,7 @@ impl App {
             .border_style(Style::default().fg(App::get_color(border)));
 
         let progress = Gauge::default()
-            .gauge_style(Style::default().fg(App::get_color(directory_path)))
+            .gauge_style(Style::default().fg(App::get_color(seekbar)))
             .ratio(self.seekbar)
             .use_unicode(true)
             .label("")

@@ -41,10 +41,9 @@ impl App {
     pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let music_dir = load_config().directories.music_directory;
 
-        let final_dir = if music_dir.exists() {
-            music_dir
-        } else {
-            initial_dir
+        let final_dir = match music_dir.exists() {
+            true => music_dir,
+            false => initial_dir,
         };
 
         Ok(Self {
