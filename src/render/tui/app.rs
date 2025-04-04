@@ -60,7 +60,7 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        let timeout = Duration::from_millis(1);
+        let timeout = Duration::from_millis(30);
         while !self.exit {
             self.file_browser.update_entries()?;
             if event::poll(timeout)? {
