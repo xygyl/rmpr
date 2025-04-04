@@ -43,11 +43,6 @@ impl InputHandler {
         });
     }
 
-    /// Skip to next song in the sink
-    /* pub fn sink_skip(&self) {
-        self.audio_player.skip();
-    } */
-
     /// Removes all currently loaded Sources from the Sink, and pauses it
     pub fn clear_sink(&self) {
         self.audio_player.clear();
