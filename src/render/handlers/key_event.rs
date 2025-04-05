@@ -15,7 +15,7 @@ impl App {
     }
 
     /// Handles key events
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
         let vol_delta = self.config.controls.vol_delta;
 
         match key_event.code {
@@ -33,9 +33,7 @@ impl App {
             KeyCode::PageUp => self.file_browser.goto_top(),
             KeyCode::PageDown => self.file_browser.goto_bottom(),
 
-            KeyCode::Char('g') => {
-                self.file_browser.current_dir = self.config.directories.music_directory.clone()
-            }
+            KeyCode::Char('g') => self.file_browser.goto_music_dir(),
 
             KeyCode::Char('c') => {
                 self.audio.clear_sink();

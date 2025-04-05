@@ -6,7 +6,7 @@ use ratatui::{
     style::{Color, Style},
     widgets::{ListItem, ListState},
 };
-use std::{collections::HashMap, fs, io, path::PathBuf, str::FromStr};
+use std::{collections::HashMap, fs::read_dir, io, path::PathBuf, str::FromStr};
 
 /// Encapsulates file system browsing state and behavior
 pub struct FileBrowser {
@@ -41,7 +41,7 @@ impl FileBrowser {
 
         let playable_exts = ["flac", "mp3", "wav"];
 
-        for entry in fs::read_dir(&self.current_dir)? {
+        for entry in read_dir(&self.current_dir)? {
             if let Ok(entry) = entry {
                 let path = entry.path();
                 if let Some(file_name) = path.file_name() {
@@ -141,6 +141,10 @@ impl FileBrowser {
     /// Moves the cursor to the bottom of the list
     pub fn goto_bottom(&mut self) {
         self.selected = self.entries.len();
+    }
+
+    pub fn goto_music_dir(&mut self) {
+        self.current_dir = self.config.directories.music_directory.clone();
     }
 
     /// Lists all items in the directory; displaying directories as their name and files as their metadata name
