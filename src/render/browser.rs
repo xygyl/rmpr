@@ -1,5 +1,5 @@
 use crate::data::{
-    config::{load_config, ConfigData},
+    config::{ConfigData, load_config},
     metadata::file_data::FileData,
 };
 use ratatui::{

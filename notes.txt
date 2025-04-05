@@ -1,5 +1,6 @@
 TUI
 	1. Display queue info in right block
-	2. FIX ALL THE BUGS!!!!!
+	2. Don't display empty dirs or dirs without playable files
+	3. FIX ALL THE BUGS!!!!!
 LOGIC
 	1. Instead of metadata being given to the file browser and per-file, see if the data could be fetched from metadata_list in browser

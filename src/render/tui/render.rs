@@ -1,11 +1,11 @@
 use crate::render::tui::app::App;
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
     symbols::{self, border},
     text::{Line, Span},
     widgets::{Block, Borders, Gauge, List, Padding, Paragraph},
-    Frame,
 };
 use std::str::FromStr;
 

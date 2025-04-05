@@ -1,6 +1,6 @@
 use crate::{
     data::{
-        config::{load_config, ConfigData},
+        config::{ConfigData, load_config},
         metadata::{file_data::FileData, metadata_manager::MetadataQueue},
     },
     handlers::input::InputHandler,
@@ -9,7 +9,7 @@ use crate::{
 use crossterm::{
     event::poll,
     execute,
-    terminal::{disable_raw_mode, LeaveAlternateScreen},
+    terminal::{LeaveAlternateScreen, disable_raw_mode},
 };
 use ratatui::DefaultTerminal;
 use std::{
