@@ -12,12 +12,13 @@ use std::str::FromStr;
 impl App {
     pub fn update(&mut self) {
         if self.audio.sink_len() == 0 {
-            self.audio.clear_sink();
-            self.seekbar = 0.0;
+            self.prog_bar = 0.0;
             return;
         }
-        let duration = self.data.duration_as_secs.unwrap_or(1.0);
-        self.seekbar = (self.audio.sink_pos() as f64 / duration).clamp(0.0, 1.0);
+        // Displays in milliseconds / milliseconds for higher resolution seekbar
+        self.prog_bar = (self.audio.sink_pos_millis() as f64
+            / (self.data.duration_as_secs.unwrap() * 1000.0))
+            .clamp(0.0, 1.0);
     }
 
     fn get_color(color: &str) -> Color {
@@ -25,28 +26,28 @@ impl App {
     }
 
     pub fn draw(&self, frame: &mut Frame) {
-        let border = &self.config.colors.border;
-        let artist = &self.config.colors.artist;
-        let title = &self.config.colors.title;
         let album = &self.config.colors.album;
-        let year = &self.config.colors.year;
-        let track_num = &self.config.colors.track_num;
-        let seekbar = &self.config.colors.seekbar;
+        let artist = &self.config.colors.artist;
+        let border = &self.config.colors.border;
         let highlight_color = &self.config.colors.highlight_color;
         let options = &self.config.colors.options;
         let paused = &self.config.colors.paused;
-        let volume = &self.config.colors.volume;
+        let seekbar = &self.config.colors.seekbar;
         let timestamp = &self.config.colors.timestamp;
+        let title = &self.config.colors.title;
+        let track_num = &self.config.colors.track_num;
+        let volume = &self.config.colors.volume;
+        let year = &self.config.colors.year;
 
         let _testing_color = "#DDE1FF";
 
         ///////////////
         // TEXT VECS //
         ///////////////
+        // 'Span::raw(" ")' is added for padding
 
         let top_mid_block_vec = vec![
             Line::from(vec![
-                Span::styled("┫ ", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!("{}", self.data.display_artist()),
                     Style::default().fg(App::get_color(artist)),
@@ -56,10 +57,8 @@ impl App {
                     format!("{}", self.data.display_title()),
                     Style::default().fg(App::get_color(title)),
                 ),
-                Span::styled(" ┣", Style::default().fg(App::get_color(border))),
             ]),
             Line::from(vec![
-                Span::styled("┫", Style::default().fg(App::get_color(border))),
                 Span::styled(
                     format!(" {} ", self.data.display_album()),
                     Style::default().fg(App::get_color(album)),
@@ -74,51 +73,65 @@ impl App {
                     format!(" {} ", self.data.display_track_number()),
                     Style::default().fg(App::get_color(track_num)),
                 ),
-                Span::styled("┣", Style::default().fg(App::get_color(border))),
+            ]),
+        ];
+
+        let top_left_block_vec = vec![
+            Line::from(vec![
+                Span::raw(" "),
+                Span::styled(
+                    match self.audio.sink_len() {
+                        0 => String::new(),
+                        _ => {
+                            format!(
+                                "{:.0}:{:02.0}/{}",
+                                self.audio.sink_pos() / 60, // Minutes
+                                self.audio.sink_pos() % 60, // Seconds
+                                // Seperate function since the display could be None
+                                self.data.display_duration_display() // Total time
+                            )
+                        }
+                    },
+                    Style::default().fg(App::get_color(timestamp)),
+                ),
+            ]),
+            Line::from(vec![
+                Span::raw(" "),
+                Span::styled(
+                    format!(
+                        "{}",
+                        match self.audio.sink_len() {
+                            0 => {
+                                "stopped"
+                            }
+                            _ => match self.audio.paused {
+                                true => "paused",
+                                false => "playing",
+                            },
+                        }
+                    ),
+                    Style::default().fg(App::get_color(paused)),
+                ),
             ]),
         ];
 
         let top_right_block_vec = vec![
-            Line::from(vec![Span::styled(
-                format!("{:>3}% ", self.audio.vol),
-                Style::default().fg(App::get_color(volume)),
-            )]),
+            Line::from(vec![
+                Span::styled(
+                    format!("{:>3}%", self.audio.vol),
+                    Style::default().fg(App::get_color(volume)),
+                ),
+                Span::raw(" "),
+            ]),
             Line::from(vec![
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::styled(format!("- "), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::raw(" "),
             ]),
-        ];
-
-        let top_left_block_vec = vec![
-            Line::from(vec![Span::styled(
-                match self.audio.sink_len() {
-                    0 => String::new(),
-                    _ => {
-                        let pos = self.audio.sink_pos();
-                        format!(" {}/{}", pos, self.data.display_duration_display())
-                    }
-                },
-                Style::default().fg(App::get_color(timestamp)),
-            )]),
-            Line::from(vec![Span::styled(
-                format!(
-                    " {}",
-                    match self.audio.sink_len() {
-                        0 => {
-                            "stopped"
-                        }
-                        _ => match self.audio.paused {
-                            true => "paused",
-                            false => "playing",
-                        },
-                    }
-                ),
-                Style::default().fg(App::get_color(paused)),
-            )]),
         ];
 
         /////////////////////////
@@ -126,8 +139,8 @@ impl App {
         /////////////////////////
 
         let mid_left_block = Block::new()
-            .border_set(border::THICK)
             .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
+            .border_set(border::THICK)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let list = List::new(self.file_browser.list_items())
@@ -141,35 +154,36 @@ impl App {
         };
 
         let mid_right_block = Block::new()
-            .border_set(mid_right_set)
             .borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT)
+            .border_set(mid_right_set)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let top_center_left_block = Block::bordered()
-            .border_set(border::THICK)
             .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
+            .border_set(border::THICK)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let top_center_mid_block = Block::bordered()
-            .border_set(border::THICK)
             .borders(Borders::TOP | Borders::BOTTOM)
+            .border_set(border::THICK)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let top_center_right_block = Block::bordered()
-            .border_set(border::THICK)
             .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
+            .border_set(border::THICK)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let progress_block = Block::bordered()
+            .borders(Borders::LEFT | Borders::RIGHT)
             .border_set(border::THICK)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let progress = Gauge::default()
-            .gauge_style(Style::default().fg(App::get_color(seekbar)))
-            .ratio(self.seekbar)
-            .use_unicode(true)
+            .block(progress_block)
             .label("")
-            .block(progress_block);
+            .ratio(self.prog_bar)
+            .use_unicode(true)
+            .gauge_style(Style::default().fg(App::get_color(seekbar)));
 
         //////////////////////////
         // LAYOUT AND RENDERING //
@@ -178,7 +192,7 @@ impl App {
         let vertical = Layout::vertical([
             Constraint::Length(4),
             Constraint::Min(0),
-            Constraint::Length(3),
+            Constraint::Length(1),
         ]);
         let [top, mid, bot] = vertical.areas(frame.area());
 
@@ -215,7 +229,9 @@ impl App {
         );
         frame.render_stateful_widget(list, mid_left, &mut self.file_browser.list_state.clone());
         frame.render_widget(
-            Paragraph::new("queue info here").block(mid_right_block),
+            Paragraph::new("queue info here")
+                .centered()
+                .block(mid_right_block),
             mid_right,
         );
         frame.render_widget(progress, bot);

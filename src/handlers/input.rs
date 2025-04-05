@@ -63,9 +63,14 @@ impl InputHandler {
         }
     }
 
-    /// Returns the sink's position
+    /// Returns the sink's position in seconds
     pub fn sink_pos(&self) -> u64 {
         self.audio_player.sink_pos()
+    }
+
+    /// Returns the sink's position in milliseconds
+    pub fn sink_pos_millis(&self) -> u128 {
+        self.audio_player.sink_pos_millis()
     }
 
     /// Returns the sink's length

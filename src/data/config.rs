@@ -5,41 +5,41 @@ use std::{fs, path::PathBuf};
 #[derive(Deserialize, Clone)] // Clone is needed for lines 69-76 in tui and 140-141 in browser
 #[serde(default)]
 pub struct Colors {
-    pub border: String,
-    pub artist: String,
-    pub title: String,
     pub album: String,
-    pub year: String,
-    pub track_num: String,
-    pub seekbar: String,
-    pub timestamp: String,
+    pub artist: String,
+    pub border: String,
     pub fs_directory: String,
     pub fs_file: String,
     pub highlight_color: String,
     pub options: String,
     pub paused: String,
     pub playback_speed: String,
+    pub seekbar: String,
+    pub timestamp: String,
+    pub title: String,
+    pub track_num: String,
     pub volume: String,
+    pub year: String,
 }
 
 impl Default for Colors {
     fn default() -> Self {
         Colors {
-            border: "#FFFFFF".to_string(),
-            artist: "#FF0000".to_string(),
-            title: "#FF0000".to_string(),
             album: "#FF0000".to_string(),
-            year: "#FF0000".to_string(),
-            track_num: "#FF0000".to_string(),
-            seekbar: "#FF0000".to_string(),
-            timestamp: "#00FF00".to_string(),
+            artist: "#FF0000".to_string(),
+            border: "#FFFFFF".to_string(),
             fs_directory: "#598EFF".to_string(),
             fs_file: "#FFFFFF".to_string(),
             highlight_color: "#FF0000".to_string(),
             options: "#FF0000".to_string(),
             paused: "#00FF00".to_string(),
             playback_speed: "#598EFF".to_string(),
+            seekbar: "#FF0000".to_string(),
+            timestamp: "#00FF00".to_string(),
+            title: "#FF0000".to_string(),
+            track_num: "#FF0000".to_string(),
             volume: "#598EFF".to_string(),
+            year: "#FF0000".to_string(),
         }
     }
 }

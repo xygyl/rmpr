@@ -33,7 +33,7 @@ pub struct App {
     pub audio: InputHandler,
     pub data: FileData,
     pub path_queue: Vec<PathBuf>,
-    pub seekbar: f64,
+    pub prog_bar: f64,
     pub exit: bool,
 }
 
@@ -53,7 +53,7 @@ impl App {
             audio: InputHandler::new()?,
             data: FileData::new(),
             path_queue: Vec::new(),
-            seekbar: f64::MIN_POSITIVE,
+            prog_bar: f64::MIN_POSITIVE,
             exit: false,
         })
     }

@@ -62,6 +62,15 @@ impl SinkHandler {
         }
     }
 
+    /// Gets the sink's position in milliseconds
+    pub fn sink_pos_millis(&self) -> u128 {
+        let sink_guard = self.sink.lock().unwrap();
+        match &*sink_guard {
+            Some(sink) => sink.get_pos().as_millis(),
+            None => Duration::new(0, 0).as_millis(),
+        }
+    }
+
     /// Appends source to sink
     pub fn append_to_sink(&self, path: PathBuf, vol: i16) {
         let file = File::open(path).unwrap();

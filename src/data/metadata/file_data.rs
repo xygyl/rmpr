@@ -76,7 +76,7 @@ impl FileData {
     pub fn display_title(&self) -> String {
         match self.title.as_ref() {
             Some(title) => format!("{}", title),
-            None => match self.raw_file.clone() {
+            None => match &self.raw_file {
                 Some(raw_file) => format!("{}", raw_file),
                 None => "".to_string(),
             },
