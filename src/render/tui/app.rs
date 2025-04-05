@@ -7,11 +7,17 @@ use crate::{
     render::browser::FileBrowser,
 };
 use crossterm::{
-    event, execute,
+    event::poll,
+    execute,
     terminal::{disable_raw_mode, LeaveAlternateScreen},
 };
 use ratatui::DefaultTerminal;
-use std::{env, io, path::PathBuf, time::Duration};
+use std::{
+    env, io,
+    path::PathBuf,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 /// Runs the TUI application
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
@@ -58,13 +64,21 @@ impl App {
         })
     }
 
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        let timeout = Duration::from_millis(30);
+    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+        let update_interval = Duration::from_millis(100);
         while !self.exit {
-            self.file_browser.update_entries()?;
-            if event::poll(timeout)? {
-                self.handle_events()?;
+            let loop_start = Instant::now();
+
+            while loop_start.elapsed() < update_interval {
+                if poll(Duration::from_millis(0))? {
+                    self.handle_events()?;
+                    break;
+                }
+                // Sleep to avoid busy waiting
+                sleep(Duration::from_millis(1));
             }
+
+            self.file_browser.update_entries()?;
             self.update();
             terminal.draw(|frame| self.draw(frame))?;
         }

@@ -1,10 +1,10 @@
 use crate::render::tui::app::App;
 use ratatui::{
-    layout::{Constraint, Layout},
+    layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
     symbols::{self, border},
     text::{Line, Span},
-    widgets::{Block, Borders, Gauge, List, Paragraph},
+    widgets::{Block, Borders, Gauge, List, Padding, Paragraph},
     Frame,
 };
 use std::str::FromStr;
@@ -44,7 +44,6 @@ impl App {
         ///////////////
         // TEXT VECS //
         ///////////////
-        // 'Span::raw(" ")' is added for padding
 
         let top_mid_block_vec = vec![
             Line::from(vec![
@@ -77,52 +76,43 @@ impl App {
         ];
 
         let top_left_block_vec = vec![
-            Line::from(vec![
-                Span::raw(" "),
-                Span::styled(
+            Line::from(vec![Span::styled(
+                match self.audio.sink_len() {
+                    0 => String::new(),
+                    _ => {
+                        format!(
+                            "{:.0}:{:02.0}/{}",
+                            self.audio.sink_pos() / 60, // Minutes
+                            self.audio.sink_pos() % 60, // Seconds
+                            // Seperate function since the display could be None
+                            self.data.display_duration_display() // Total time
+                        )
+                    }
+                },
+                Style::default().fg(App::get_color(timestamp)),
+            )]),
+            Line::from(vec![Span::styled(
+                format!(
+                    "{}",
                     match self.audio.sink_len() {
-                        0 => String::new(),
-                        _ => {
-                            format!(
-                                "{:.0}:{:02.0}/{}",
-                                self.audio.sink_pos() / 60, // Minutes
-                                self.audio.sink_pos() % 60, // Seconds
-                                // Seperate function since the display could be None
-                                self.data.display_duration_display() // Total time
-                            )
+                        0 => {
+                            "stopped"
                         }
-                    },
-                    Style::default().fg(App::get_color(timestamp)),
+                        _ => match self.audio.paused {
+                            true => "paused",
+                            false => "playing",
+                        },
+                    }
                 ),
-            ]),
-            Line::from(vec![
-                Span::raw(" "),
-                Span::styled(
-                    format!(
-                        "{}",
-                        match self.audio.sink_len() {
-                            0 => {
-                                "stopped"
-                            }
-                            _ => match self.audio.paused {
-                                true => "paused",
-                                false => "playing",
-                            },
-                        }
-                    ),
-                    Style::default().fg(App::get_color(paused)),
-                ),
-            ]),
+                Style::default().fg(App::get_color(paused)),
+            )]),
         ];
 
         let top_right_block_vec = vec![
-            Line::from(vec![
-                Span::styled(
-                    format!("{:>3}%", self.audio.vol),
-                    Style::default().fg(App::get_color(volume)),
-                ),
-                Span::raw(" "),
-            ]),
+            Line::from(vec![Span::styled(
+                format!("{:>3}%", self.audio.vol),
+                Style::default().fg(App::get_color(volume)),
+            )]),
             Line::from(vec![
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
@@ -130,7 +120,6 @@ impl App {
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
                 Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::raw(" "),
             ]),
         ];
 
@@ -138,10 +127,28 @@ impl App {
         // RENDERING VARIABLES //
         /////////////////////////
 
+        let top_center_left_block = Block::bordered()
+            .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
+            .border_set(border::THICK)
+            .border_style(Style::default().fg(App::get_color(border)))
+            .padding(Padding::horizontal(1));
+
+        let top_center_right_block = Block::bordered()
+            .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
+            .border_set(border::THICK)
+            .border_style(Style::default().fg(App::get_color(border)))
+            .padding(Padding::horizontal(1));
+
+        let top_center_mid_block = Block::bordered()
+            .borders(Borders::TOP | Borders::BOTTOM)
+            .border_set(border::THICK)
+            .border_style(Style::default().fg(App::get_color(border)));
+
         let mid_left_block = Block::new()
             .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)));
+            .border_style(Style::default().fg(App::get_color(border)))
+            .padding(Padding::horizontal(1));
 
         let list = List::new(self.file_browser.list_items())
             .block(mid_left_block)
@@ -156,21 +163,6 @@ impl App {
         let mid_right_block = Block::new()
             .borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT)
             .border_set(mid_right_set)
-            .border_style(Style::default().fg(App::get_color(border)));
-
-        let top_center_left_block = Block::bordered()
-            .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
-            .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)));
-
-        let top_center_mid_block = Block::bordered()
-            .borders(Borders::TOP | Borders::BOTTOM)
-            .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)));
-
-        let top_center_right_block = Block::bordered()
-            .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
-            .border_set(border::THICK)
             .border_style(Style::default().fg(App::get_color(border)));
 
         let progress_block = Block::bordered()
@@ -211,20 +203,20 @@ impl App {
             _ => frame.render_widget(
                 Paragraph::new(top_mid_block_vec)
                     .block(top_center_mid_block)
-                    .alignment(ratatui::layout::Alignment::Center),
+                    .alignment(Alignment::Center),
                 top_center,
             ),
         }
         frame.render_widget(
             Paragraph::new(top_left_block_vec)
                 .block(top_center_left_block)
-                .alignment(ratatui::layout::Alignment::Left),
+                .alignment(Alignment::Left),
             top_left,
         );
         frame.render_widget(
             Paragraph::new(top_right_block_vec)
                 .block(top_center_right_block)
-                .alignment(ratatui::layout::Alignment::Right),
+                .alignment(Alignment::Right),
             top_right,
         );
         frame.render_stateful_widget(list, mid_left, &mut self.file_browser.list_state.clone());
