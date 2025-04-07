@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
-/// Encapsulates themeing data
+/// Encapsulates themeing data.
 #[derive(Deserialize, Clone)] // Clone is needed for lines 69-76 in tui and 140-141 in browser
 #[serde(default)]
 pub struct Colors {
@@ -15,6 +15,7 @@ pub struct Colors {
     pub paused: String,
     pub playback_speed: String,
     pub seekbar: String,
+    pub status: String,
     pub timestamp: String,
     pub title: String,
     pub track_num: String,
@@ -35,6 +36,7 @@ impl Default for Colors {
             paused: "#00FF00".to_string(),
             playback_speed: "#598EFF".to_string(),
             seekbar: "#FF0000".to_string(),
+            status: "#598EFF".to_string(),
             timestamp: "#00FF00".to_string(),
             title: "#FFFF00".to_string(),
             track_num: "#FF00FF".to_string(),
@@ -44,7 +46,7 @@ impl Default for Colors {
     }
 }
 
-/// Encapsulates directories data
+/// Encapsulates directories data.
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Directories {
@@ -64,7 +66,7 @@ impl Default for Directories {
     }
 }
 
-/// Encapsulates controlling data
+/// Encapsulates controlling data.
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct Controls {
@@ -77,7 +79,7 @@ impl Default for Controls {
     }
 }
 
-/// Encapsulates all config.toml parameters
+/// Encapsulates all config.toml parameters.
 #[derive(Deserialize)]
 pub struct ConfigData {
     pub colors: Colors,
@@ -95,7 +97,7 @@ impl Default for ConfigData {
     }
 }
 
-/// Loads the ConfigData from config.toml
+/// Loads the ConfigData from config.toml.
 pub fn load_config() -> ConfigData {
     let config_path = dirs::config_dir()
         .map(|mut path| {

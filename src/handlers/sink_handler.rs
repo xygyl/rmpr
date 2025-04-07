@@ -1,7 +1,7 @@
 use rodio::{Decoder, OutputStreamHandle, Sink};
 use std::{fs::File, io::BufReader, path::PathBuf, sync::Mutex, time::Duration};
 
-/// Encapsulates an audio sink and an output stream handle
+/// Encapsulates an audio sink and an output stream handle.
 pub struct SinkHandler {
     stream_handle: OutputStreamHandle,
     sink: Mutex<Option<Sink>>,
@@ -15,7 +15,7 @@ impl SinkHandler {
         }
     }
 
-    /// Plays the given file and sets its volume
+    /// Plays the given file and sets its volume.
     pub fn play_file(&self, path: PathBuf, vol: i16) {
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
@@ -30,7 +30,7 @@ impl SinkHandler {
         self.set_volume(vol);
     }
 
-    /// Toggles play and pause
+    /// Toggles play and pause.
     pub fn toggle_play_pause(&self) {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
@@ -45,7 +45,7 @@ impl SinkHandler {
         }
     }
 
-    /// Sets the playback volume
+    /// Sets the playback volume.
     pub fn set_volume(&self, mag: i16) {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
@@ -53,7 +53,7 @@ impl SinkHandler {
         }
     }
 
-    /// Gets the sink's position in seconds
+    /// Gets the sink's position in seconds.
     pub fn sink_pos(&self) -> u64 {
         let sink_guard = self.sink.lock().unwrap();
         match &*sink_guard {
@@ -62,7 +62,7 @@ impl SinkHandler {
         }
     }
 
-    /// Gets the sink's position in milliseconds
+    /// Gets the sink's position in milliseconds.
     pub fn sink_pos_millis(&self) -> u128 {
         let sink_guard = self.sink.lock().unwrap();
         match &*sink_guard {
@@ -71,7 +71,7 @@ impl SinkHandler {
         }
     }
 
-    /// Appends source to sink
+    /// Appends source to sink.
     pub fn append_to_sink(&self, path: PathBuf, vol: i16) {
         let file = File::open(path).unwrap();
         let reader = BufReader::new(file);
@@ -89,7 +89,7 @@ impl SinkHandler {
         self.set_volume(vol);
     }
 
-    /// Removes all currently loaded Sources from the Sink, and pauses it
+    /// Removes all currently loaded Sources from the Sink, and pauses it.
     pub fn clear(&self) {
         let sink_guard = self.sink.lock().unwrap();
         if let Some(ref sink) = *sink_guard {
@@ -97,7 +97,7 @@ impl SinkHandler {
         }
     }
 
-    /// Returns how many elements are in the sink
+    /// Returns how many elements are in the sink.
     pub fn get_len(&self) -> usize {
         let sink_guard = self.sink.lock().unwrap();
         match &*sink_guard {
@@ -106,7 +106,7 @@ impl SinkHandler {
         }
     }
 
-    /// Returns true if the sink is empty, otherwise false
+    /// Returns true if the sink is empty, otherwise false.
     pub fn is_empty(&self) -> bool {
         let sink_guard = self.sink.lock().unwrap();
         match &*sink_guard {

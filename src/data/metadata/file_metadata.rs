@@ -1,7 +1,7 @@
 use audiotags::Tag;
 use std::path::PathBuf;
 
-/// Encapsulates file data information
+/// Encapsulates file data information.
 #[derive(Clone)]
 pub struct FileMetadata {
     pub raw_file: Option<String>,
@@ -28,7 +28,7 @@ impl FileMetadata {
         }
     }
 
-    /// Sets FileMetadata with the respective values from the file
+    /// Sets FileMetadata with the respective values from the file.
     pub fn get_file_data(&mut self, path: &PathBuf) {
         let valid_exts = ["flac", "mp3", "m4a", "mp4"];
 
@@ -56,7 +56,7 @@ impl FileMetadata {
         }
     }
 
-    /// Display album or nothing
+    /// Display album or nothing.
     pub fn display_album(&self) -> String {
         match self.album.as_ref() {
             Some(display) => format!("{}", display),
@@ -64,7 +64,7 @@ impl FileMetadata {
         }
     }
 
-    /// Display artists or nothing
+    /// Display artists or nothing.
     pub fn display_artist(&self) -> String {
         match self.artist.as_ref() {
             Some(artist) => format!("{}", artist),
@@ -72,7 +72,7 @@ impl FileMetadata {
         }
     }
 
-    /// Display title, or raw file, or nothing if neither is found
+    /// Display title, or raw file, or nothing if neither is found.
     pub fn display_title(&self) -> String {
         match self.title.as_ref() {
             Some(title) => format!("{}", title),
@@ -83,7 +83,7 @@ impl FileMetadata {
         }
     }
 
-    /// Display year or nothing
+    /// Display year or nothing.
     pub fn display_year(&self) -> String {
         match self.year {
             Some(year) => format!("{}", year),
@@ -91,7 +91,7 @@ impl FileMetadata {
         }
     }
 
-    /// Display track_number or nothing
+    /// Display track_number or nothing.
     pub fn display_track_number(&self) -> String {
         match self.track_number {
             Some(track_number) => format!("{}", track_number),
@@ -99,14 +99,14 @@ impl FileMetadata {
         }
     }
 
-    /// Converts seconds to seconds and minutes
+    /// Converts seconds to seconds and minutes.
     fn sec_to_min_sec(duration: f64) -> (f64, f64) {
         let min = (duration / 60.0).floor();
         let sec = (duration % 60.0).floor();
         (min, sec)
     }
 
-    /// Display duration_display or nothing
+    /// Display duration_display or nothing.
     pub fn display_duration_display(&self) -> String {
         match self.duration_display {
             Some((min, sec)) => format!("{:.0}:{:02.0}", min, sec),

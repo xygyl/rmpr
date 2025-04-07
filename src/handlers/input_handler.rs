@@ -22,7 +22,7 @@ impl InputHandler {
         })
     }
 
-    /// Starts playing the file on a new thread using the AudioPlayer
+    /// Starts playing the file on a new thread using the AudioPlayer.
     pub fn play(&mut self, path: &PathBuf) {
         let path_clone = path.clone();
         let current_vol = self.vol;
@@ -33,7 +33,7 @@ impl InputHandler {
         self.paused = false;
     }
 
-    /// Append audio to the sink
+    /// Append audio to the sink.
     pub fn append(&mut self, path: &PathBuf) {
         let path_clone = path.clone();
         let current_vol = self.vol;
@@ -43,18 +43,18 @@ impl InputHandler {
         });
     }
 
-    /// Removes all currently loaded Sources from the Sink, and pauses it
+    /// Removes all currently loaded Sources from the Sink, and pauses it.
     pub fn clear_sink(&self) {
         self.audio_player.clear();
     }
 
-    /// Toggles between play and pause
+    /// Toggles between play and pause.
     pub fn toggle_pause(&mut self) {
         self.paused = !self.paused;
         self.audio_player.toggle_play_pause();
     }
 
-    /// Adjusts the volume by a given delta
+    /// Adjusts the volume by a given delta.
     pub fn adjust_volume(&mut self, delta: i16) {
         let new_vol = self.vol + delta;
         if new_vol >= 0 && new_vol <= 100 {
@@ -63,21 +63,22 @@ impl InputHandler {
         }
     }
 
-    /// Returns the sink's position in seconds
+    /// Returns the sink's position in seconds.
     pub fn sink_pos(&self) -> u64 {
         self.audio_player.sink_pos()
     }
 
-    /// Returns the sink's position in milliseconds
+    /// Returns the sink's position in milliseconds.
     pub fn sink_pos_millis(&self) -> u128 {
         self.audio_player.sink_pos_millis()
     }
 
-    /// Returns the sink's length
+    /// Returns the sink's length.
     pub fn get_len(&self) -> usize {
         self.audio_player.get_len()
     }
 
+    /// Returns true if the sink is empty, otherwise false.
     pub fn is_empty(&self) -> bool {
         self.audio_player.is_empty()
     }

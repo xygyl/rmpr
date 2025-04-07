@@ -19,7 +19,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-/// Runs the TUI application
+/// Runs the TUI application.
 pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = ratatui::init();
     let current_dir = env::current_dir()?;
@@ -31,7 +31,7 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
     Ok(res?)
 }
 
-/// The main application
+/// The main application.
 pub struct App {
     pub config: ConfigData,
     pub meta_manager: MetadataQueue,
@@ -64,7 +64,7 @@ impl App {
         })
     }
 
-    /// Update's the progress bar's apperance
+    /// Update's the progress bar's apperance.
     pub fn update_prog_bar(&mut self) {
         if self.audio.is_empty() {
             self.prog_bar = 0.0;
@@ -76,7 +76,7 @@ impl App {
             .clamp(0.0, 1.0);
     }
 
-    /// Renders the tui
+    /// Renders the tui.
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
         let update_interval = Duration::from_millis(100);
         while !self.exit {

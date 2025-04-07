@@ -8,7 +8,7 @@ use ratatui::{
 };
 use std::{collections::HashMap, fs::read_dir, io, path::PathBuf, str::FromStr};
 
-/// Encapsulates file system browsing state and behavior
+/// Encapsulates file system browsing state and behavior.
 pub struct FileBrowser {
     pub config: ConfigData,
     pub current_dir: PathBuf,
@@ -34,7 +34,7 @@ impl FileBrowser {
         }
     }
 
-    /// Refreshes the list of entries from the current directory
+    /// Refreshes the list of entries from the current directory.
     pub fn update_entries(&mut self) -> io::Result<()> {
         let mut directories = Vec::new();
         let mut metadata_list = Vec::new();
@@ -91,7 +91,7 @@ impl FileBrowser {
         Ok(())
     }
 
-    /// Moves the cursor up one element or goes to the bottom if at the top
+    /// Moves the cursor up one element or goes to the bottom if at the top.
     pub fn navigate_up(&mut self) {
         if self.entries.is_empty() {
             return;
@@ -103,7 +103,7 @@ impl FileBrowser {
         self.sel_map.insert(self.current_dir.clone(), self.selected);
     }
 
-    /// Moves the cursor down one element or goes to the top if at the bottom
+    /// Moves the cursor down one element or goes to the top if at the bottom.
     pub fn navigate_down(&mut self) {
         if self.entries.is_empty() {
             return;
@@ -115,7 +115,7 @@ impl FileBrowser {
         self.sel_map.insert(self.current_dir.clone(), self.selected);
     }
 
-    /// Navigates into the selected directory, either setting the cursor to the saved position or 0
+    /// Navigates into the selected directory, either setting the cursor to the saved position or 0.
     pub fn navigate_into(&mut self) {
         if let Some(path) = self.entries.get(self.selected) {
             if path.is_dir() {
@@ -125,7 +125,7 @@ impl FileBrowser {
         }
     }
 
-    /// Navigates into the previous directory, either setting the cursor to the saved position or 0
+    /// Navigates into the previous directory, either setting the cursor to the saved position or 0.
     pub fn navigate_back(&mut self) {
         if let Some(parent) = self.current_dir.parent() {
             self.current_dir = parent.to_path_buf();
@@ -133,22 +133,22 @@ impl FileBrowser {
         }
     }
 
-    /// Moves the cursor to the top of the list
+    /// Moves the cursor to the top of the list.
     pub fn goto_top(&mut self) {
         self.selected = 0
     }
 
-    /// Moves the cursor to the bottom of the list
+    /// Moves the cursor to the bottom of the list.
     pub fn goto_bottom(&mut self) {
         self.selected = self.entries.len();
     }
 
-    /// Navigates to the user's set music directory
+    /// Navigates to the user's set music directory.
     pub fn goto_music_dir(&mut self) {
         self.current_dir = self.config.directories.music_directory.clone();
     }
 
-    /// Lists all items in the directory; displays directories as their name, files as their metadata name, and both by their respective colors
+    /// Lists all items in the directory; displays directories as their name, files as their metadata name, and both by their respective colors.
     pub fn list_items(&self) -> Vec<ListItem> {
         let fs_directory = &self.config.colors.fs_directory;
         let fs_file = &self.config.colors.fs_file;
