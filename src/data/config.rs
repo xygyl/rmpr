@@ -25,7 +25,7 @@ pub struct Colors {
 impl Default for Colors {
     fn default() -> Self {
         Colors {
-            album: "#FF0000".to_string(),
+            album: "#00FF00".to_string(),
             artist: "#FF0000".to_string(),
             border: "#FFFFFF".to_string(),
             fs_directory: "#598EFF".to_string(),
@@ -36,10 +36,10 @@ impl Default for Colors {
             playback_speed: "#598EFF".to_string(),
             seekbar: "#FF0000".to_string(),
             timestamp: "#00FF00".to_string(),
-            title: "#FF0000".to_string(),
-            track_num: "#FF0000".to_string(),
+            title: "#FFFF00".to_string(),
+            track_num: "#FF00FF".to_string(),
             volume: "#598EFF".to_string(),
-            year: "#FF0000".to_string(),
+            year: "#598EFF".to_string(),
         }
     }
 }

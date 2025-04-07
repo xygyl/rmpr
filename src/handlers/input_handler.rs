@@ -1,4 +1,4 @@
-use crate::handlers::sink::SinkHandler;
+use crate::handlers::sink_handler::SinkHandler;
 
 use rodio::OutputStream;
 use std::{path::PathBuf, sync::Arc, thread};
@@ -74,7 +74,11 @@ impl InputHandler {
     }
 
     /// Returns the sink's length
-    pub fn sink_len(&self) -> usize {
+    pub fn get_len(&self) -> usize {
         self.audio_player.get_len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.audio_player.is_empty()
     }
 }

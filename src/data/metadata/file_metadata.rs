@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 /// Encapsulates file data information
 #[derive(Clone)]
-pub struct FileData {
+pub struct FileMetadata {
     pub raw_file: Option<String>,
     pub album: Option<String>,
     pub artist: Option<String>,
@@ -14,7 +14,7 @@ pub struct FileData {
     pub track_number: Option<u16>,
 }
 
-impl FileData {
+impl FileMetadata {
     pub fn new() -> Self {
         Self {
             raw_file: None,
@@ -28,7 +28,7 @@ impl FileData {
         }
     }
 
-    /// Sets FileData with the respective values from the file
+    /// Sets FileMetadata with the respective values from the file
     pub fn get_file_data(&mut self, path: &PathBuf) {
         let valid_exts = ["flac", "mp3", "m4a", "mp4"];
 
@@ -43,7 +43,7 @@ impl FileData {
                         self.artist = tags.artist().map(|n| n.to_string());
                         self.title = tags.title().map(|n| n.to_string());
                         self.year = tags.year();
-                        self.duration_display = tags.duration().map(FileData::sec_to_min_sec);
+                        self.duration_display = tags.duration().map(FileMetadata::sec_to_min_sec);
                         self.duration_as_secs = tags.duration();
                         self.track_number = tags.track_number();
                     }

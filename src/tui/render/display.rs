@@ -1,4 +1,4 @@
-use crate::render::tui::app::App;
+use crate::tui::render::app::App;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout},
@@ -10,18 +10,7 @@ use ratatui::{
 use std::str::FromStr;
 
 impl App {
-    pub fn update(&mut self) {
-        if self.audio.sink_len() == 0 {
-            self.prog_bar = 0.0;
-            return;
-        }
-        // Displays in milliseconds / milliseconds for higher resolution seekbar
-        self.prog_bar = (self.audio.sink_pos_millis() as f64
-            / (self.data.duration_as_secs.unwrap() * 1000.0))
-            .clamp(0.0, 1.0);
-    }
-
-    fn get_color(color: &str) -> Color {
+    pub fn get_color(&self, color: &str) -> Color {
         Color::from_str(color).unwrap_or(Color::Reset)
     }
 
@@ -49,37 +38,37 @@ impl App {
             Line::from(vec![
                 Span::styled(
                     format!("{}", self.data.display_artist()),
-                    Style::default().fg(App::get_color(artist)),
+                    Style::default().fg(self.get_color(artist)),
                 ),
-                Span::styled(" ┃ ", Style::default().fg(App::get_color(border))),
+                Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
                 Span::styled(
                     format!("{}", self.data.display_title()),
-                    Style::default().fg(App::get_color(title)),
+                    Style::default().fg(self.get_color(title)),
                 ),
             ]),
             Line::from(vec![
                 Span::styled(
                     format!(" {} ", self.data.display_album()),
-                    Style::default().fg(App::get_color(album)),
+                    Style::default().fg(self.get_color(album)),
                 ),
-                Span::styled("┃", Style::default().fg(App::get_color(border))),
+                Span::styled("┃", Style::default().fg(self.get_color(border))),
                 Span::styled(
                     format!(" {} ", self.data.display_year()),
-                    Style::default().fg(App::get_color(year)),
+                    Style::default().fg(self.get_color(year)),
                 ),
-                Span::styled("┃", Style::default().fg(App::get_color(border))),
+                Span::styled("┃", Style::default().fg(self.get_color(border))),
                 Span::styled(
                     format!(" {} ", self.data.display_track_number()),
-                    Style::default().fg(App::get_color(track_num)),
+                    Style::default().fg(self.get_color(track_num)),
                 ),
             ]),
         ];
 
         let top_left_block_vec = vec![
             Line::from(vec![Span::styled(
-                match self.audio.sink_len() {
-                    0 => String::new(),
-                    _ => {
+                match self.audio.is_empty() {
+                    true => String::new(),
+                    false => {
                         format!(
                             "{:.0}:{:02.0}/{}",
                             self.audio.sink_pos() / 60, // Minutes
@@ -89,37 +78,37 @@ impl App {
                         )
                     }
                 },
-                Style::default().fg(App::get_color(timestamp)),
+                Style::default().fg(self.get_color(timestamp)),
             )]),
             Line::from(vec![Span::styled(
                 format!(
                     "{}",
-                    match self.audio.sink_len() {
-                        0 => {
+                    match self.audio.is_empty() {
+                        true => {
                             "stopped"
                         }
-                        _ => match self.audio.paused {
+                        false => match self.audio.paused {
                             true => "paused",
                             false => "playing",
                         },
                     }
                 ),
-                Style::default().fg(App::get_color(paused)),
+                Style::default().fg(self.get_color(paused)),
             )]),
         ];
 
         let top_right_block_vec = vec![
             Line::from(vec![Span::styled(
-                format!("{:>3}%", self.audio.vol),
-                Style::default().fg(App::get_color(volume)),
+                format!("{}%", self.audio.vol),
+                Style::default().fg(self.get_color(volume)),
             )]),
             Line::from(vec![
-                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
-                Span::styled(format!("-"), Style::default().fg(App::get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
+                Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
             ]),
         ];
 
@@ -130,29 +119,29 @@ impl App {
         let top_center_left_block = Block::bordered()
             .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)))
+            .border_style(Style::default().fg(self.get_color(border)))
             .padding(Padding::horizontal(1));
 
         let top_center_right_block = Block::bordered()
             .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)))
+            .border_style(Style::default().fg(self.get_color(border)))
             .padding(Padding::horizontal(1));
 
         let top_center_mid_block = Block::bordered()
             .borders(Borders::TOP | Borders::BOTTOM)
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)));
+            .border_style(Style::default().fg(self.get_color(border)));
 
         let mid_left_block = Block::new()
             .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)))
+            .border_style(Style::default().fg(self.get_color(border)))
             .padding(Padding::horizontal(1));
 
         let list = List::new(self.file_browser.list_items())
             .block(mid_left_block)
-            .highlight_style(Style::default().fg(App::get_color(highlight_color)));
+            .highlight_style(Style::default().fg(self.get_color(highlight_color)));
 
         let mid_right_set = symbols::border::Set {
             top_left: symbols::line::THICK_HORIZONTAL_DOWN,
@@ -163,19 +152,19 @@ impl App {
         let mid_right_block = Block::new()
             .borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT)
             .border_set(mid_right_set)
-            .border_style(Style::default().fg(App::get_color(border)));
+            .border_style(Style::default().fg(self.get_color(border)));
 
         let progress_block = Block::bordered()
             .borders(Borders::LEFT | Borders::RIGHT)
             .border_set(border::THICK)
-            .border_style(Style::default().fg(App::get_color(border)));
+            .border_style(Style::default().fg(self.get_color(border)));
 
         let progress = Gauge::default()
             .block(progress_block)
             .label("")
             .ratio(self.prog_bar)
             .use_unicode(true)
-            .gauge_style(Style::default().fg(App::get_color(seekbar)));
+            .gauge_style(Style::default().fg(self.get_color(seekbar)));
 
         //////////////////////////
         // LAYOUT AND RENDERING //
@@ -198,9 +187,9 @@ impl App {
         let [top_left, top_center, top_right] = horizontal_top.areas(top);
         let [mid_left, mid_right] = horizontal_mid.areas(mid);
 
-        match self.audio.sink_len() {
-            0 => frame.render_widget(Paragraph::new("").block(top_center_mid_block), top_center),
-            _ => frame.render_widget(
+        match self.audio.is_empty() {
+            true => frame.render_widget(Paragraph::new("").block(top_center_mid_block), top_center),
+            false => frame.render_widget(
                 Paragraph::new(top_mid_block_vec)
                     .block(top_center_mid_block)
                     .alignment(Alignment::Center),

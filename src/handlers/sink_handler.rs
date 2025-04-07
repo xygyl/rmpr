@@ -105,4 +105,13 @@ impl SinkHandler {
             None => 0,
         }
     }
+
+    /// Returns true if the sink is empty, otherwise false
+    pub fn is_empty(&self) -> bool {
+        let sink_guard = self.sink.lock().unwrap();
+        match &*sink_guard {
+            Some(sink) => sink.empty(),
+            None => true,
+        }
+    }
 }

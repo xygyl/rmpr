@@ -1,10 +1,10 @@
 use crate::{
     data::{
         config::{ConfigData, load_config},
-        metadata::{file_data::FileData, metadata_manager::MetadataQueue},
+        metadata::{file_metadata::FileMetadata, metadata_queue::MetadataQueue},
     },
-    handlers::input::InputHandler,
-    render::browser::FileBrowser,
+    handlers::input_handler::InputHandler,
+    tui::fs_browser::FileBrowser,
 };
 use crossterm::{
     event::poll,
@@ -37,7 +37,7 @@ pub struct App {
     pub meta_manager: MetadataQueue,
     pub file_browser: FileBrowser,
     pub audio: InputHandler,
-    pub data: FileData,
+    pub data: FileMetadata,
     pub path_queue: Vec<PathBuf>,
     pub prog_bar: f64,
     pub exit: bool,
@@ -57,11 +57,22 @@ impl App {
             meta_manager: MetadataQueue::new(),
             file_browser: FileBrowser::new(final_dir),
             audio: InputHandler::new()?,
-            data: FileData::new(),
+            data: FileMetadata::new(),
             path_queue: Vec::new(),
             prog_bar: f64::MIN_POSITIVE,
             exit: false,
         })
+    }
+
+    pub fn update_tui(&mut self) {
+        if self.audio.is_empty() {
+            self.prog_bar = 0.0;
+            return;
+        }
+        // Displays in milliseconds / milliseconds for higher resolution seekbar
+        self.prog_bar = (self.audio.sink_pos_millis() as f64
+            / (self.data.duration_as_secs.unwrap() * 1000.0))
+            .clamp(0.0, 1.0);
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
@@ -79,7 +90,7 @@ impl App {
             }
 
             self.file_browser.update_entries()?;
-            self.update();
+            self.update_tui();
             terminal.draw(|frame| self.draw(frame))?;
         }
         Ok(())

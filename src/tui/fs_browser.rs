@@ -1,6 +1,6 @@
 use crate::data::{
     config::{ConfigData, load_config},
-    metadata::file_data::FileData,
+    metadata::file_metadata::FileMetadata,
 };
 use ratatui::{
     style::{Color, Style},
@@ -57,7 +57,7 @@ impl FileBrowser {
                             if playable_exts
                                 .contains(&ext.to_string_lossy().to_ascii_lowercase().as_ref())
                             {
-                                let mut file_data = FileData::new();
+                                let mut file_data = FileMetadata::new();
                                 file_data.get_file_data(&path);
                                 let track_number = file_data.track_number.unwrap_or(0);
                                 let title = file_data
@@ -161,7 +161,7 @@ impl FileBrowser {
                         .map(|s| format!("[{}]", s.to_string_lossy().to_string()))
                         .unwrap_or_else(|| "Unknown".to_string()),
                     false => {
-                        let mut file_data = FileData::new();
+                        let mut file_data = FileMetadata::new();
                         file_data.get_file_data(entry);
                         file_data
                             .title

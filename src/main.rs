@@ -1,8 +1,8 @@
-use crate::render::tui::app::run_tui;
+use crate::tui::render::app::run_tui;
 
 mod data;
 mod handlers;
-mod render;
+mod tui;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     run_tui()
