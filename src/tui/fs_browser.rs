@@ -143,11 +143,12 @@ impl FileBrowser {
         self.selected = self.entries.len();
     }
 
+    /// Navigates to the user's set music directory
     pub fn goto_music_dir(&mut self) {
         self.current_dir = self.config.directories.music_directory.clone();
     }
 
-    /// Lists all items in the directory; displaying directories as their name and files as their metadata name
+    /// Lists all items in the directory; displays directories as their name, files as their metadata name, and both by their respective colors
     pub fn list_items(&self) -> Vec<ListItem> {
         let fs_directory = &self.config.colors.fs_directory;
         let fs_file = &self.config.colors.fs_file;

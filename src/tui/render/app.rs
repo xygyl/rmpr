@@ -64,7 +64,8 @@ impl App {
         })
     }
 
-    pub fn update_tui(&mut self) {
+    /// Update's the progress bar's apperance
+    pub fn update_prog_bar(&mut self) {
         if self.audio.is_empty() {
             self.prog_bar = 0.0;
             return;
@@ -75,6 +76,7 @@ impl App {
             .clamp(0.0, 1.0);
     }
 
+    /// Renders the tui
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
         let update_interval = Duration::from_millis(100);
         while !self.exit {
@@ -90,7 +92,7 @@ impl App {
             }
 
             self.file_browser.update_entries()?;
-            self.update_tui();
+            self.update_prog_bar();
             terminal.draw(|frame| self.draw(frame))?;
         }
         Ok(())

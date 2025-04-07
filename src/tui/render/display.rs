@@ -10,10 +10,12 @@ use ratatui::{
 use std::str::FromStr;
 
 impl App {
+    /// Shortens the code necessary to set the color of a terminal element
     pub fn get_color(&self, color: &str) -> Color {
         Color::from_str(color).unwrap_or(Color::Reset)
     }
 
+    /// Draws the elements on the terminal
     pub fn draw(&self, frame: &mut Frame) {
         let album = &self.config.colors.album;
         let artist = &self.config.colors.artist;
