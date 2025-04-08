@@ -13,10 +13,8 @@ use crossterm::{
 };
 use ratatui::DefaultTerminal;
 use std::{
-    collections::{HashMap, VecDeque},
     env, io,
     path::PathBuf,
-    sync::Arc,
     thread::sleep,
     time::{Duration, Instant},
 };
@@ -36,12 +34,11 @@ pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
 /// The main application.
 pub struct App {
     pub config: ConfigData,
-    pub metadata_queue: MetadataQueue,
-    pub metadata_cache: HashMap<PathBuf, Arc<FileMetadata>>,
+    pub meta_manager: MetadataQueue,
     pub file_browser: FileBrowser,
     pub audio: InputHandler,
-    pub data: Arc<FileMetadata>,
-    pub path_queue: VecDeque<PathBuf>,
+    pub data: FileMetadata,
+    pub path_queue: Vec<PathBuf>,
     pub prog_bar: f64,
     pub exit: bool,
 }
@@ -57,12 +54,11 @@ impl App {
 
         Ok(Self {
             config: load_config(),
-            metadata_queue: MetadataQueue::new(),
-            metadata_cache: HashMap::new(),
+            meta_manager: MetadataQueue::new(),
             file_browser: FileBrowser::new(final_dir),
             audio: InputHandler::new()?,
-            data: Arc::new(FileMetadata::new()),
-            path_queue: VecDeque::new(),
+            data: FileMetadata::new(),
+            path_queue: Vec::new(),
             prog_bar: f64::MIN_POSITIVE,
             exit: false,
         })
@@ -77,7 +73,7 @@ impl App {
         // Displays in milliseconds / milliseconds for higher resolution seekbar.
         // Originally intended for gauge's use_unicode(), but it's being kept in case I decide to go back to gauge.
         self.prog_bar = (self.audio.sink_pos_millis() as f64
-            / (self.data.duration_as_secs.unwrap_or(f64::MIN_POSITIVE) * 1000.0))
+            / (self.data.duration_as_secs.unwrap() * 1000.0))
             .clamp(0.0, 1.0);
     }
 

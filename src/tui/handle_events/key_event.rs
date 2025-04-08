@@ -1,6 +1,6 @@
 use crate::{data::metadata::file_metadata::FileMetadata, tui::render::app::App};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use std::{io, sync::Arc};
+use std::io;
 
 /// Handles events
 impl App {
@@ -38,7 +38,7 @@ impl App {
             KeyCode::Char('c') => {
                 self.audio.clear_sink();
                 self.path_queue.clear();
-                self.data = Arc::new(FileMetadata::new());
+                self.data = FileMetadata::new();
             }
 
             KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(vol_delta),
