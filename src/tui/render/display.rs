@@ -29,9 +29,9 @@ impl App {
 
     /// Draws the elements on the terminal.
     pub fn draw(&self, frame: &mut Frame) {
-        //------//
-        // VARS //
-        //------//
+        //┌──────┐
+        //│ VARS │
+        //└──────┘
 
         let display_path = self.format_display_path(&self.file_browser.current_dir);
         let album = &self.config.colors.album;
@@ -50,29 +50,11 @@ impl App {
         let year = &self.config.colors.year;
         let _testing_color = "#DDE1FF";
 
-        //-----------//
-        // TEXT VECS //
-        //-----------//
+        //┌────────┐
+        //│ LAYOUT │
+        //└────────┘
 
-        let status_vec = Line::from(vec![Span::styled(
-            format!("{}", display_path),
-            Style::default().fg(self.get_color(status)),
-        )]);
-
-        //--------//
-        // BLOCKS //
-        //--------//
-
-        let top_mid_block = Block::new()
-            .borders(Borders::TOP | Borders::BOTTOM)
-            .border_set(border::THICK)
-            .border_style(Style::default().fg(self.get_color(border)));
-
-        //--------//
-        // LAYOUT //
-        //--------//
-
-        let [top, status, middle, bottom] = Layout::vertical([
+        let [top, info, middle, bottom] = Layout::vertical([
             Constraint::Length(4),
             Constraint::Length(1),
             Constraint::Min(0),
@@ -91,9 +73,9 @@ impl App {
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .areas(middle);
 
-        //-----------//
-        // RENDERING //
-        //-----------//
+        //┌───────────┐
+        //│ RENDERING │
+        //└───────────┘
 
         // TOP LEFT
         frame.render_widget(
@@ -140,43 +122,53 @@ impl App {
             top_left,
         );
         // TOP MIDDLE
-        match self.audio.is_empty() {
-            true => frame.render_widget(Paragraph::new("").block(top_mid_block), top_center),
-            false => frame.render_widget(
-                Paragraph::new(vec![
-                    Line::from(vec![
-                        Span::styled(
-                            format!("{}", self.data.display_artist()),
-                            Style::default().fg(self.get_color(artist)),
-                        ),
-                        Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
-                        Span::styled(
-                            format!("{}", self.data.display_title()),
-                            Style::default().fg(self.get_color(title)),
-                        ),
-                    ]),
-                    Line::from(vec![
-                        Span::styled(
-                            format!("{}", self.data.display_album()),
-                            Style::default().fg(self.get_color(album)),
-                        ),
-                        Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
-                        Span::styled(
-                            format!("{}", self.data.display_year()),
-                            Style::default().fg(self.get_color(year)),
-                        ),
-                        Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
-                        Span::styled(
-                            format!("{}", self.data.display_track_number()),
-                            Style::default().fg(self.get_color(track_num)),
-                        ),
-                    ]),
-                ])
-                .block(top_mid_block)
-                .alignment(Alignment::Center),
-                top_center,
-            ),
-        }
+        frame.render_widget(
+            Paragraph::new(match self.audio.is_empty() {
+                true => {
+                    vec![Line::from("")]
+                }
+                false => {
+                    vec![
+                        Line::from(vec![
+                            Span::styled(
+                                format!("{}", self.data.display_artist()),
+                                Style::default().fg(self.get_color(artist)),
+                            ),
+                            Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
+                            Span::styled(
+                                format!("{}", self.data.display_title()),
+                                Style::default().fg(self.get_color(title)),
+                            ),
+                        ]),
+                        Line::from(vec![
+                            Span::styled(
+                                format!("{}", self.data.display_album()),
+                                Style::default().fg(self.get_color(album)),
+                            ),
+                            Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
+                            Span::styled(
+                                format!("{}", self.data.display_year()),
+                                Style::default().fg(self.get_color(year)),
+                            ),
+                            Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
+                            Span::styled(
+                                format!("{}", self.data.display_track_number()),
+                                Style::default().fg(self.get_color(track_num)),
+                            ),
+                        ]),
+                    ]
+                }
+            })
+            .block(
+                Block::new()
+                    .borders(Borders::TOP | Borders::BOTTOM)
+                    .border_set(border::THICK)
+                    .border_style(Style::default().fg(self.get_color(border))),
+            )
+            .alignment(Alignment::Center),
+            top_center,
+        );
+
         // TOP RIGHT
         frame.render_widget(
             Paragraph::new(vec![
@@ -205,14 +197,13 @@ impl App {
         );
         // STATUS
         frame.render_widget(
-            Paragraph::new(status_vec)
-                .block(
-                    Block::new()
-                        .border_set(border::THICK)
-                        .border_style(Style::default().fg(self.get_color(border))),
-                )
-                .alignment(Alignment::Center),
-            status,
+            Paragraph::new(Line::from(vec![Span::styled(
+                format!("{}", display_path),
+                Style::default().fg(self.get_color(status)),
+            )]))
+            .block(Block::new())
+            .alignment(Alignment::Center),
+            info,
         );
         // MIDDLE LEFT
         frame.render_stateful_widget(
@@ -232,7 +223,7 @@ impl App {
         frame.render_widget(
             Paragraph::new("queue info here").centered().block(
                 Block::new()
-                    .borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM | Borders::LEFT)
+                    .borders(Borders::ALL)
                     .border_set(symbols::border::Set {
                         top_left: symbols::line::THICK_HORIZONTAL_DOWN,
                         bottom_left: symbols::line::THICK_HORIZONTAL_UP,
