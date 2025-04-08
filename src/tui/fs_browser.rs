@@ -127,6 +127,9 @@ impl FileBrowser {
 
     /// Navigates into the previous directory, either setting the cursor to the saved position or 0.
     pub fn navigate_back(&mut self) {
+        if self.current_dir == self.config.directories.music_directory {
+            return;
+        }
         if let Some(parent) = self.current_dir.parent() {
             self.current_dir = parent.to_path_buf();
             self.selected = *self.sel_map.get(&self.current_dir).unwrap_or(&0);

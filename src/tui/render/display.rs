@@ -3,9 +3,9 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
-    symbols::{self, border},
+    symbols::{self, border, line::THICK},
     text::{Line, Span},
-    widgets::{Block, Borders, Gauge, List, Padding, Paragraph},
+    widgets::{Block, Borders, LineGauge, List, Padding, Paragraph},
 };
 use std::{path::PathBuf, str::FromStr};
 
@@ -32,6 +32,7 @@ impl App {
         //------//
         // VARS //
         //------//
+
         let display_path = self.format_display_path(&self.file_browser.current_dir);
         let album = &self.config.colors.album;
         let artist = &self.config.colors.artist;
@@ -39,7 +40,8 @@ impl App {
         let highlight_color = &self.config.colors.highlight_color;
         let options = &self.config.colors.options;
         let paused = &self.config.colors.paused;
-        let seekbar = &self.config.colors.seekbar;
+        let seekbar_filled = &self.config.colors.seekbar_filled;
+        let seekbar_unfilled = &self.config.colors.seekbar_unfilled;
         let status = &self.config.colors.status;
         let timestamp = &self.config.colors.timestamp;
         let title = &self.config.colors.title;
@@ -47,23 +49,29 @@ impl App {
         let volume = &self.config.colors.volume;
         let year = &self.config.colors.year;
         let _testing_color = "#DDE1FF";
+
         //-----------//
         // TEXT VECS //
         //-----------//
+
         let status_vec = Line::from(vec![Span::styled(
             format!("{}", display_path),
             Style::default().fg(self.get_color(status)),
         )]);
+
         //--------//
         // BLOCKS //
         //--------//
+
         let top_mid_block = Block::new()
             .borders(Borders::TOP | Borders::BOTTOM)
             .border_set(border::THICK)
             .border_style(Style::default().fg(self.get_color(border)));
+
         //--------//
         // LAYOUT //
         //--------//
+
         let [top, status, middle, bottom] = Layout::vertical([
             Constraint::Length(4),
             Constraint::Length(1),
@@ -82,6 +90,7 @@ impl App {
         let [mid_left, mid_right] =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .areas(middle);
+
         //-----------//
         // RENDERING //
         //-----------//
@@ -148,17 +157,17 @@ impl App {
                     ]),
                     Line::from(vec![
                         Span::styled(
-                            format!(" {} ", self.data.display_album()),
+                            format!("{}", self.data.display_album()),
                             Style::default().fg(self.get_color(album)),
                         ),
-                        Span::styled("┃", Style::default().fg(self.get_color(border))),
+                        Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
                         Span::styled(
-                            format!(" {} ", self.data.display_year()),
+                            format!("{}", self.data.display_year()),
                             Style::default().fg(self.get_color(year)),
                         ),
-                        Span::styled("┃", Style::default().fg(self.get_color(border))),
+                        Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
                         Span::styled(
-                            format!(" {} ", self.data.display_track_number()),
+                            format!("{}", self.data.display_track_number()),
                             Style::default().fg(self.get_color(track_num)),
                         ),
                     ]),
@@ -235,17 +244,13 @@ impl App {
         );
         // PROGRESS BAR
         frame.render_widget(
-            Gauge::default()
-                .block(
-                    Block::bordered()
-                        .borders(Borders::LEFT | Borders::RIGHT)
-                        .border_set(border::THICK)
-                        .border_style(Style::default().fg(self.get_color(border))),
-                )
+            LineGauge::default()
+                .block(Block::new())
                 .label("")
+                .line_set(THICK)
                 .ratio(self.prog_bar)
-                .use_unicode(true)
-                .gauge_style(Style::default().fg(self.get_color(seekbar))),
+                .filled_style(Style::default().fg(self.get_color(&seekbar_filled)))
+                .unfilled_style(Style::default().fg(self.get_color(&seekbar_unfilled))),
             bottom,
         );
     }

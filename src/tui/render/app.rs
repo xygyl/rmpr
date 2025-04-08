@@ -70,7 +70,8 @@ impl App {
             self.prog_bar = 0.0;
             return;
         }
-        // Displays in milliseconds / milliseconds for higher resolution seekbar
+        // Displays in milliseconds / milliseconds for higher resolution seekbar.
+        // Originally intended for gauge's use_unicode(), but it's being kept in case I decide to go back to gauge.
         self.prog_bar = (self.audio.sink_pos_millis() as f64
             / (self.data.duration_as_secs.unwrap() * 1000.0))
             .clamp(0.0, 1.0);
