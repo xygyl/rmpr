@@ -4,9 +4,9 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
-    symbols::{border, line::THICK},
+    symbols::border,
     text::{Line, Span},
-    widgets::{Block, Borders, LineGauge, List, Padding, Paragraph},
+    widgets::{Block, Borders, List, Padding, Paragraph},
 };
 use std::{path::PathBuf, str::FromStr};
 
@@ -35,22 +35,9 @@ impl App {
         //└──────┘
 
         let display_path = self.format_display_path(&self.file_browser.current_dir);
-        let album = &self.config.colors.album;
-        let artist = &self.config.colors.artist;
         let border = &self.config.colors.border;
         let highlight_color = &self.config.colors.highlight_color;
-        let options = &self.config.colors.options;
-        let paused = &self.config.colors.paused;
-        let seekbar_filled = &self.config.colors.seekbar_filled;
-        let seekbar_unfilled = &self.config.colors.seekbar_unfilled;
         let status = &self.config.colors.status;
-        let tab_selected = &self.config.colors.tab_selected;
-        let tab_unselected = &self.config.colors.tab_unselected;
-        let timestamp = &self.config.colors.timestamp;
-        let title = &self.config.colors.title;
-        let track_num = &self.config.colors.track_num;
-        let volume = &self.config.colors.volume;
-        let year = &self.config.colors.year;
         let _testing_color = "#DDE1FF";
 
         //┌────────┐
@@ -87,148 +74,13 @@ impl App {
         //└───────────┘
 
         // TOP LEFT
-        frame.render_widget(
-            Paragraph::new(vec![
-                Line::from(vec![Span::styled(
-                    match self.audio.is_empty() {
-                        true => String::new(),
-                        false => {
-                            format!(
-                                "{:.0}:{:02.0}/{}",
-                                self.audio.sink_pos() / 60, // Minutes
-                                self.audio.sink_pos() % 60, // Seconds
-                                // Seperate function since the display could be None
-                                self.data.display_duration_display() // Total time
-                            )
-                        }
-                    },
-                    Style::default().fg(self.get_color(timestamp)),
-                )]),
-                Line::from(vec![Span::styled(
-                    format!(
-                        "{}",
-                        match self.audio.is_empty() {
-                            true => {
-                                "stopped"
-                            }
-                            false => match self.audio.paused {
-                                true => "paused",
-                                false => "playing",
-                            },
-                        }
-                    ),
-                    Style::default().fg(self.get_color(paused)),
-                )]),
-            ])
-            .block(
-                Block::new()
-                    .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
-                    .border_set(border::THICK)
-                    .border_style(Style::default().fg(self.get_color(border)))
-                    .padding(Padding::horizontal(1)),
-            )
-            .alignment(Alignment::Left),
-            top_left,
-        );
+        frame.render_widget(self.top_left(), top_left);
         // TOP CENTER
-        frame.render_widget(
-            Paragraph::new(match self.audio.is_empty() {
-                true => {
-                    vec![Line::from("")]
-                }
-                false => {
-                    vec![
-                        Line::from(vec![
-                            Span::styled(
-                                format!("{}", self.data.display_artist()),
-                                Style::default().fg(self.get_color(artist)),
-                            ),
-                            Span::from(" "),
-                            Span::styled(
-                                format!("{}", self.data.display_title()),
-                                Style::default().fg(self.get_color(title)),
-                            ),
-                        ]),
-                        Line::from(vec![
-                            Span::styled(
-                                format!("{}", self.data.display_album()),
-                                Style::default().fg(self.get_color(album)),
-                            ),
-                            Span::from(" "),
-                            Span::styled(
-                                format!("{}", self.data.display_year()),
-                                Style::default().fg(self.get_color(year)),
-                            ),
-                            Span::from(" "),
-                            Span::styled(
-                                format!("{}", self.data.display_track_number()),
-                                Style::default().fg(self.get_color(track_num)),
-                            ),
-                        ]),
-                    ]
-                }
-            })
-            .block(
-                Block::new()
-                    .borders(Borders::TOP | Borders::BOTTOM)
-                    .border_set(border::THICK)
-                    .border_style(Style::default().fg(self.get_color(border)))
-                    .title_bottom(
-                        Line::from(vec![
-                            Span::styled("┫", self.get_color(border)),
-                            Span::styled(
-                                " 1 ",
-                                match self.tab {
-                                    Tab::Browser => {
-                                        Style::default().fg(self.get_color(tab_selected))
-                                    }
-                                    _ => Style::default().fg(self.get_color(tab_unselected)),
-                                },
-                            ),
-                            Span::styled(
-                                " 2 ",
-                                match self.tab {
-                                    Tab::Playlist => {
-                                        Style::default().fg(self.get_color(tab_selected))
-                                    }
-                                    _ => Style::default().fg(self.get_color(tab_unselected)),
-                                },
-                            ),
-                            Span::styled("┣", self.get_color(border)),
-                        ])
-                        .centered(),
-                    ),
-            )
-            .alignment(Alignment::Center),
-            top_center,
-        );
-
+        frame.render_widget(self.top_center(), top_center);
         // TOP RIGHT
-        frame.render_widget(
-            Paragraph::new(vec![
-                Line::from(vec![Span::styled(
-                    format!("{}%", self.audio.vol),
-                    Style::default().fg(self.get_color(volume)),
-                )]),
-                Line::from(vec![
-                    Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
-                    Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
-                    Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
-                    Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
-                    Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
-                    Span::styled(format!("-"), Style::default().fg(self.get_color(options))),
-                ]),
-            ])
-            .block(
-                Block::new()
-                    .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
-                    .border_set(border::THICK)
-                    .border_style(Style::default().fg(self.get_color(border)))
-                    .padding(Padding::horizontal(1)),
-            )
-            .alignment(Alignment::Right),
-            top_right,
-        );
+        frame.render_widget(self.top_right(), top_right);
+        // PROGRESS BAR
+        frame.render_widget(self.progress_bar(), bottom);
         // STATUS
         match self.tab {
             Tab::Playlist => {
@@ -274,16 +126,5 @@ impl App {
                 );
             }
         }
-        // PROGRESS BAR
-        frame.render_widget(
-            LineGauge::default()
-                .block(Block::new())
-                .label("")
-                .line_set(THICK)
-                .ratio(self.prog_bar)
-                .filled_style(Style::default().fg(self.get_color(&seekbar_filled)))
-                .unfilled_style(Style::default().fg(self.get_color(&seekbar_unfilled))),
-            bottom,
-        );
     }
 }

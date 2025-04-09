@@ -13,14 +13,16 @@ use crossterm::{
 };
 use ratatui::DefaultTerminal;
 use std::{
-    env, io,
+    env,
+    error::Error,
+    io,
     path::PathBuf,
     thread::sleep,
     time::{Duration, Instant},
 };
 
 /// Runs the TUI application.
-pub fn run_tui() -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_tui() -> Result<(), Box<dyn Error>> {
     let mut terminal = ratatui::init();
     let current_dir = env::current_dir()?;
     let mut app = App::new(current_dir)?;
@@ -57,7 +59,7 @@ pub enum State {
 }
 
 impl App {
-    pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(initial_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
         let music_dir = load_config().directories.music_directory;
 
         let final_dir = match music_dir.exists() {
@@ -91,10 +93,15 @@ impl App {
             .clamp(0.0, 1.0);
     }
 
+    /// Returns true if the program is running
+    fn is_running(&self) -> bool {
+        self.state == State::Running
+    }
+
     /// Renders the tui.
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
         let update_interval = Duration::from_millis(100);
-        while self.state == State::Running {
+        while self.is_running() {
             let loop_start = Instant::now();
 
             while loop_start.elapsed() < update_interval {

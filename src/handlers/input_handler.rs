@@ -1,7 +1,7 @@
 use crate::handlers::sink_handler::SinkHandler;
 
 use rodio::OutputStream;
-use std::{path::PathBuf, sync::Arc, thread};
+use std::{error::Error, path::PathBuf, sync::Arc, thread};
 
 /// Encapsulates audio-related state and controls.
 pub struct InputHandler {
@@ -11,7 +11,7 @@ pub struct InputHandler {
     pub paused: bool,
 }
 impl InputHandler {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
         let (stream, stream_handle) = OutputStream::try_default()?;
         let audio_player = Arc::new(SinkHandler::new(stream_handle));
         Ok(Self {
