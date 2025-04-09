@@ -40,8 +40,20 @@ pub struct App {
     pub data: FileMetadata,
     pub path_queue: Vec<PathBuf>,
     pub prog_bar: f64,
-    pub tab: usize,
-    pub exit: bool,
+    pub tab: Tab,
+    pub state: State,
+}
+/// Current tab information.
+pub enum Tab {
+    Playlist,
+    Browser,
+}
+
+/// App state.
+#[derive(PartialEq)]
+pub enum State {
+    Running,
+    Quit,
 }
 
 impl App {
@@ -60,20 +72,20 @@ impl App {
             audio: InputHandler::new()?,
             data: FileMetadata::new(),
             path_queue: Vec::new(),
-            prog_bar: f64::MIN_POSITIVE,
-            tab: 0,
-            exit: false,
+            prog_bar: 0.0,
+            tab: Tab::Browser,
+            state: State::Running,
         })
     }
 
     /// Update's the progress bar's apperance.
+    ///
+    /// Displays in milliseconds / milliseconds for higher resolution seekbar.Originally intended for gauge's use_unicode(), but it's being kept in case I decide to go back to gauge.
     pub fn update_prog_bar(&mut self) {
         if self.audio.is_empty() {
             self.prog_bar = 0.0;
             return;
         }
-        // Displays in milliseconds / milliseconds for higher resolution seekbar.
-        // Originally intended for gauge's use_unicode(), but it's being kept in case I decide to go back to gauge.
         self.prog_bar = (self.audio.sink_pos_millis() as f64
             / (self.data.duration_as_secs.unwrap() * 1000.0))
             .clamp(0.0, 1.0);
@@ -82,7 +94,7 @@ impl App {
     /// Renders the tui.
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
         let update_interval = Duration::from_millis(100);
-        while !self.exit {
+        while self.state == State::Running {
             let loop_start = Instant::now();
 
             while loop_start.elapsed() < update_interval {

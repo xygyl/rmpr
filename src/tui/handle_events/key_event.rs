@@ -1,8 +1,9 @@
+use super::super::render::app::{State, Tab};
 use crate::{data::metadata::file_metadata::FileMetadata, tui::render::app::App};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use std::io;
 
-/// Handles events
+/// Handles events.
 impl App {
     pub fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
@@ -14,12 +15,12 @@ impl App {
         Ok(())
     }
 
-    /// Handles key events
+    /// Handles key events.
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         let vol_delta = self.config.controls.vol_delta;
 
         match key_event.code {
-            KeyCode::Char('q') => self.exit = true,
+            KeyCode::Char('q') => self.state = State::Quit,
 
             KeyCode::Enter => self.handle_play(),
             KeyCode::Char('a') => self.handle_append(),
@@ -45,17 +46,8 @@ impl App {
             KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(vol_delta * -1),
             KeyCode::Char('p') => self.audio.toggle_pause(),
 
-            KeyCode::Char('1') => self.tab = 0,
-            KeyCode::Char('2') => self.tab = 1,
-            KeyCode::Tab => match self.tab {
-                0 => {
-                    self.tab = 1;
-                }
-                1 => {
-                    self.tab = 0;
-                }
-                _ => {}
-            },
+            KeyCode::Char('1') => self.tab = Tab::Browser,
+            KeyCode::Char('2') => self.tab = Tab::Playlist,
 
             _ => {}
         }

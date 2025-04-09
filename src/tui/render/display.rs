@@ -1,9 +1,10 @@
+use super::app::Tab;
 use crate::tui::render::app::App;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
-    symbols::{self, border, line::THICK},
+    symbols::{border, line::THICK},
     text::{Line, Span},
     widgets::{Block, Borders, LineGauge, List, Padding, Paragraph},
 };
@@ -43,6 +44,8 @@ impl App {
         let seekbar_filled = &self.config.colors.seekbar_filled;
         let seekbar_unfilled = &self.config.colors.seekbar_unfilled;
         let status = &self.config.colors.status;
+        let tab_selected = &self.config.colors.tab_selected;
+        let tab_unselected = &self.config.colors.tab_unselected;
         let timestamp = &self.config.colors.timestamp;
         let title = &self.config.colors.title;
         let track_num = &self.config.colors.track_num;
@@ -68,6 +71,16 @@ impl App {
             Constraint::Length(15),
         ])
         .areas(top);
+
+        //┌────────────┐
+        //│ BLOCK VARS │
+        //└────────────┘
+
+        let middle_block = Block::new()
+            .borders(Borders::ALL)
+            .border_set(border::THICK)
+            .border_style(Style::default().fg(self.get_color(border)))
+            .padding(Padding::horizontal(1));
 
         //┌───────────┐
         //│ RENDERING │
@@ -117,7 +130,7 @@ impl App {
             .alignment(Alignment::Left),
             top_left,
         );
-        // TOP MIDDLE
+        // TOP CENTER
         frame.render_widget(
             Paragraph::new(match self.audio.is_empty() {
                 true => {
@@ -159,7 +172,32 @@ impl App {
                 Block::new()
                     .borders(Borders::TOP | Borders::BOTTOM)
                     .border_set(border::THICK)
-                    .border_style(Style::default().fg(self.get_color(border))),
+                    .border_style(Style::default().fg(self.get_color(border)))
+                    .title_bottom(
+                        Line::from(vec![
+                            Span::styled("┫", self.get_color(border)),
+                            Span::styled(
+                                " 1 ",
+                                match self.tab {
+                                    Tab::Browser => {
+                                        Style::default().fg(self.get_color(tab_selected))
+                                    }
+                                    _ => Style::default().fg(self.get_color(tab_unselected)),
+                                },
+                            ),
+                            Span::styled(
+                                " 2 ",
+                                match self.tab {
+                                    Tab::Playlist => {
+                                        Style::default().fg(self.get_color(tab_selected))
+                                    }
+                                    _ => Style::default().fg(self.get_color(tab_unselected)),
+                                },
+                            ),
+                            Span::styled("┣", self.get_color(border)),
+                        ])
+                        .centered(),
+                    ),
             )
             .alignment(Alignment::Center),
             top_center,
@@ -193,7 +231,7 @@ impl App {
         );
         // STATUS
         match self.tab {
-            0 => {
+            Tab::Playlist => {
                 frame.render_widget(
                     Paragraph::new(Line::from(vec![Span::styled(
                         format!("Playlist ({} items)", self.audio.get_len()),
@@ -204,7 +242,7 @@ impl App {
                     info,
                 );
             }
-            1 => {
+            Tab::Browser => {
                 frame.render_widget(
                     Paragraph::new(Line::from(vec![Span::styled(
                         format!("{}", display_path),
@@ -215,38 +253,26 @@ impl App {
                     info,
                 );
             }
-            _ => {}
         }
         // MIDDLE
         match self.tab {
-            0 => {
+            Tab::Playlist => {
                 frame.render_widget(
-                    Paragraph::new("queue info here").centered().block(
-                        Block::new()
-                            .borders(Borders::ALL)
-                            .border_set(border::THICK)
-                            .border_style(Style::default().fg(self.get_color(border)))
-                            .padding(Padding::horizontal(1)),
-                    ),
+                    Paragraph::new("queue info here")
+                        .centered()
+                        .block(middle_block),
                     middle,
                 );
             }
-            1 => {
+            Tab::Browser => {
                 frame.render_stateful_widget(
                     List::new(self.file_browser.list_items())
-                        .block(
-                            Block::new()
-                                .borders(Borders::ALL)
-                                .border_set(border::THICK)
-                                .border_style(Style::default().fg(self.get_color(border)))
-                                .padding(Padding::horizontal(1)),
-                        )
+                        .block(middle_block)
                         .highlight_style(Style::default().fg(self.get_color(highlight_color))),
                     middle,
                     &mut self.file_browser.list_state.clone(),
                 );
             }
-            _ => {}
         }
         // PROGRESS BAR
         frame.render_widget(
