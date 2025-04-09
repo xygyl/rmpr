@@ -40,6 +40,7 @@ pub struct App {
     pub data: FileMetadata,
     pub path_queue: Vec<PathBuf>,
     pub prog_bar: f64,
+    pub tab: usize,
     pub exit: bool,
 }
 
@@ -60,6 +61,7 @@ impl App {
             data: FileMetadata::new(),
             path_queue: Vec::new(),
             prog_bar: f64::MIN_POSITIVE,
+            tab: 0,
             exit: false,
         })
     }

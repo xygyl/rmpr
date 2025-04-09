@@ -1,6 +1,6 @@
 TUI
 	1. Display queue info in right block
 	2. Don't display empty dirs or dirs without playable files
-	3. FIX ALL THE BUGS!!!!!
+	3. Add span to bottom on top center block to display current tab (black numbers with current tab highlighted? Maybe bg color?)
 LOGIC
 	1. Instead of metadata being given to the file browser and per-file, see if the data could be fetched from metadata_list in browser

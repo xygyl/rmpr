@@ -69,10 +69,6 @@ impl App {
         ])
         .areas(top);
 
-        let [mid_left, mid_right] =
-            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .areas(middle);
-
         //┌───────────┐
         //│ RENDERING │
         //└───────────┘
@@ -196,43 +192,62 @@ impl App {
             top_right,
         );
         // STATUS
-        frame.render_widget(
-            Paragraph::new(Line::from(vec![Span::styled(
-                format!("{}", display_path),
-                Style::default().fg(self.get_color(status)),
-            )]))
-            .block(Block::new())
-            .alignment(Alignment::Center),
-            info,
-        );
-        // MIDDLE LEFT
-        frame.render_stateful_widget(
-            List::new(self.file_browser.list_items())
-                .block(
-                    Block::new()
-                        .borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM)
-                        .border_set(border::THICK)
-                        .border_style(Style::default().fg(self.get_color(border)))
-                        .padding(Padding::horizontal(1)),
-                )
-                .highlight_style(Style::default().fg(self.get_color(highlight_color))),
-            mid_left,
-            &mut self.file_browser.list_state.clone(),
-        );
-        // MIDDLE RIGHT
-        frame.render_widget(
-            Paragraph::new("queue info here").centered().block(
-                Block::new()
-                    .borders(Borders::ALL)
-                    .border_set(symbols::border::Set {
-                        top_left: symbols::line::THICK_HORIZONTAL_DOWN,
-                        bottom_left: symbols::line::THICK_HORIZONTAL_UP,
-                        ..symbols::border::THICK
-                    })
-                    .border_style(Style::default().fg(self.get_color(border))),
-            ),
-            mid_right,
-        );
+        match self.tab {
+            0 => {
+                frame.render_widget(
+                    Paragraph::new(Line::from(vec![Span::styled(
+                        format!("Playlist ({} items)", self.audio.get_len()),
+                        Style::default().fg(self.get_color(status)),
+                    )]))
+                    .block(Block::new())
+                    .alignment(Alignment::Center),
+                    info,
+                );
+            }
+            1 => {
+                frame.render_widget(
+                    Paragraph::new(Line::from(vec![Span::styled(
+                        format!("{}", display_path),
+                        Style::default().fg(self.get_color(status)),
+                    )]))
+                    .block(Block::new())
+                    .alignment(Alignment::Center),
+                    info,
+                );
+            }
+            _ => {}
+        }
+        // MIDDLE
+        match self.tab {
+            0 => {
+                frame.render_widget(
+                    Paragraph::new("queue info here").centered().block(
+                        Block::new()
+                            .borders(Borders::ALL)
+                            .border_set(border::THICK)
+                            .border_style(Style::default().fg(self.get_color(border)))
+                            .padding(Padding::horizontal(1)),
+                    ),
+                    middle,
+                );
+            }
+            1 => {
+                frame.render_stateful_widget(
+                    List::new(self.file_browser.list_items())
+                        .block(
+                            Block::new()
+                                .borders(Borders::ALL)
+                                .border_set(border::THICK)
+                                .border_style(Style::default().fg(self.get_color(border)))
+                                .padding(Padding::horizontal(1)),
+                        )
+                        .highlight_style(Style::default().fg(self.get_color(highlight_color))),
+                    middle,
+                    &mut self.file_browser.list_state.clone(),
+                );
+            }
+            _ => {}
+        }
         // PROGRESS BAR
         frame.render_widget(
             LineGauge::default()

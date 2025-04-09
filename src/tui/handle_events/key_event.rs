@@ -45,6 +45,18 @@ impl App {
             KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(vol_delta * -1),
             KeyCode::Char('p') => self.audio.toggle_pause(),
 
+            KeyCode::Char('1') => self.tab = 0,
+            KeyCode::Char('2') => self.tab = 1,
+            KeyCode::Tab => match self.tab {
+                0 => {
+                    self.tab = 1;
+                }
+                1 => {
+                    self.tab = 0;
+                }
+                _ => {}
+            },
+
             _ => {}
         }
     }
