@@ -143,7 +143,7 @@ impl App {
                                 format!("{}", self.data.display_artist()),
                                 Style::default().fg(self.get_color(artist)),
                             ),
-                            Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
+                            Span::from(" "),
                             Span::styled(
                                 format!("{}", self.data.display_title()),
                                 Style::default().fg(self.get_color(title)),
@@ -154,12 +154,12 @@ impl App {
                                 format!("{}", self.data.display_album()),
                                 Style::default().fg(self.get_color(album)),
                             ),
-                            Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
+                            Span::from(" "),
                             Span::styled(
                                 format!("{}", self.data.display_year()),
                                 Style::default().fg(self.get_color(year)),
                             ),
-                            Span::styled(" ┃ ", Style::default().fg(self.get_color(border))),
+                            Span::from(" "),
                             Span::styled(
                                 format!("{}", self.data.display_track_number()),
                                 Style::default().fg(self.get_color(track_num)),
