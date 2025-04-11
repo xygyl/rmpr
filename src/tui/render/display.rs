@@ -2,11 +2,13 @@ use super::app::Tab;
 use crate::tui::render::app::App;
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Layout},
+    layout::{Alignment, Constraint, Layout, Margin},
     style::{Color, Style},
     symbols::border,
     text::{Line, Span},
-    widgets::{Block, Borders, List, Padding, Paragraph},
+    widgets::{
+        Block, Borders, List, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    },
 };
 use std::{path::PathBuf, str::FromStr};
 
@@ -123,6 +125,15 @@ impl App {
                         .highlight_style(Style::default().fg(self.get_color(highlight_color))),
                     middle,
                     &mut self.file_browser.list_state.clone(),
+                );
+                frame.render_stateful_widget(
+                    Scrollbar::new(ScrollbarOrientation::VerticalRight),
+                    frame.area().inner(Margin {
+                        vertical: 1,
+                        horizontal: 0,
+                    }),
+                    &mut ScrollbarState::new(self.file_browser.entries.len())
+                        .position(self.file_browser.selected),
                 );
             }
         }
