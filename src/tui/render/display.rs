@@ -4,6 +4,7 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Margin},
     style::{Color, Style},
+    symbols::scrollbar,
     text::{Line, Span},
     widgets::{
         Block, BorderType, Borders, List, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
@@ -83,44 +84,55 @@ impl App {
         frame.render_widget(self.top_right(), top_right);
         // PROGRESS BAR
         frame.render_widget(self.progress_bar(), bottom);
-        // STATUS
+
         match self.tab {
-            Tab::Playlist => match self.audio.get_len() {
-                0 => {
-                    frame.render_widget(
-                        Paragraph::new(Line::from(vec![Span::styled(
-                            "playlist is empty",
-                            Style::default().fg(self.get_color(status)),
-                        )]))
-                        .block(Block::new())
-                        .alignment(Alignment::Center),
-                        info,
-                    );
+            Tab::Playlist => {
+                // STATUS
+                match self.audio.get_len() {
+                    0 => {
+                        frame.render_widget(
+                            Paragraph::new(Line::from(vec![Span::styled(
+                                "playlist is empty",
+                                Style::default().fg(self.get_color(status)),
+                            )]))
+                            .block(Block::new())
+                            .alignment(Alignment::Center),
+                            info,
+                        );
+                    }
+                    1 => {
+                        frame.render_widget(
+                            Paragraph::new(Line::from(vec![Span::styled(
+                                "playlist (1 item)",
+                                Style::default().fg(self.get_color(status)),
+                            )]))
+                            .block(Block::new())
+                            .alignment(Alignment::Center),
+                            info,
+                        );
+                    }
+                    _ => {
+                        frame.render_widget(
+                            Paragraph::new(Line::from(vec![Span::styled(
+                                format!("playlist ({} items)", self.audio.get_len()),
+                                Style::default().fg(self.get_color(status)),
+                            )]))
+                            .block(Block::new())
+                            .alignment(Alignment::Center),
+                            info,
+                        );
+                    }
                 }
-                1 => {
-                    frame.render_widget(
-                        Paragraph::new(Line::from(vec![Span::styled(
-                            "playlist (1 item)",
-                            Style::default().fg(self.get_color(status)),
-                        )]))
-                        .block(Block::new())
-                        .alignment(Alignment::Center),
-                        info,
-                    );
-                }
-                _ => {
-                    frame.render_widget(
-                        Paragraph::new(Line::from(vec![Span::styled(
-                            format!("playlist ({} items)", self.audio.get_len()),
-                            Style::default().fg(self.get_color(status)),
-                        )]))
-                        .block(Block::new())
-                        .alignment(Alignment::Center),
-                        info,
-                    );
-                }
-            },
+                // MIDDLE
+                frame.render_widget(
+                    Paragraph::new("queue info here")
+                        .centered()
+                        .block(middle_block),
+                    middle,
+                );
+            }
             Tab::Browser => {
+                // STATUS
                 frame.render_widget(
                     Paragraph::new(Line::from(vec![Span::styled(
                         format!("{}", display_path),
@@ -130,19 +142,6 @@ impl App {
                     .alignment(Alignment::Center),
                     info,
                 );
-            }
-        }
-        // MIDDLE
-        match self.tab {
-            Tab::Playlist => {
-                frame.render_widget(
-                    Paragraph::new("queue info here")
-                        .centered()
-                        .block(middle_block),
-                    middle,
-                );
-            }
-            Tab::Browser => {
                 frame.render_stateful_widget(
                     List::new(self.file_browser.list_items())
                         .block(middle_block)
@@ -150,11 +149,16 @@ impl App {
                     middle,
                     &mut self.file_browser.list_state.clone(),
                 );
+                // MIDDLE
                 frame.render_stateful_widget(
-                    Scrollbar::new(ScrollbarOrientation::VerticalRight),
-                    frame.area().inner(Margin {
-                        vertical: 1,
+                    Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                        .symbols(scrollbar::VERTICAL)
+                        .begin_symbol(None)
+                        .end_symbol(None)
+                        .track_symbol(None),
+                    middle.inner(Margin {
                         horizontal: 0,
+                        vertical: 1,
                     }),
                     &mut ScrollbarState::new(self.file_browser.entries.len())
                         .position(self.file_browser.selected),
