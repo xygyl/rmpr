@@ -4,10 +4,10 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Margin},
     style::{Color, Style},
-    symbols::border,
     text::{Line, Span},
     widgets::{
-        Block, Borders, List, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Block, BorderType, Borders, List, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
+        ScrollbarState,
     },
 };
 use std::{path::PathBuf, str::FromStr};
@@ -67,8 +67,8 @@ impl App {
 
         let middle_block = Block::new()
             .borders(Borders::ALL)
-            .border_set(border::THICK)
             .border_style(Style::default().fg(self.get_color(border)))
+            .border_type(BorderType::Rounded)
             .padding(Padding::horizontal(1));
 
         //┌───────────┐

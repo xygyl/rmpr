@@ -3,9 +3,8 @@ use crate::tui::render::app::App;
 use ratatui::{
     layout::Alignment,
     style::Style,
-    symbols::{border, line::THICK},
     text::{Line, Span},
-    widgets::{Block, Borders, LineGauge, Padding, Paragraph, Widget},
+    widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Widget},
 };
 
 impl App {
@@ -48,8 +47,8 @@ impl App {
         .block(
             Block::new()
                 .borders(Borders::TOP | Borders::BOTTOM | Borders::LEFT)
-                .border_set(border::THICK)
                 .border_style(Style::default().fg(self.get_color(border)))
+                .border_type(BorderType::Rounded)
                 .padding(Padding::horizontal(1)),
         )
         .alignment(Alignment::Left)
@@ -102,11 +101,11 @@ impl App {
         .block(
             Block::new()
                 .borders(Borders::TOP | Borders::BOTTOM)
-                .border_set(border::THICK)
                 .border_style(Style::default().fg(self.get_color(border)))
+                .border_type(BorderType::Rounded)
                 .title_bottom(
                     Line::from(vec![
-                        Span::styled("┫", self.get_color(border)),
+                        Span::styled("┤", self.get_color(border)),
                         Span::styled(
                             " 1 ",
                             match self.tab {
@@ -121,7 +120,7 @@ impl App {
                                 _ => Style::default().fg(self.get_color(tab_unselected)),
                             },
                         ),
-                        Span::styled("┣", self.get_color(border)),
+                        Span::styled("├", self.get_color(border)),
                     ])
                     .centered(),
                 ),
@@ -149,8 +148,8 @@ impl App {
         .block(
             Block::new()
                 .borders(Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
-                .border_set(border::THICK)
                 .border_style(Style::default().fg(self.get_color(border)))
+                .border_type(BorderType::Rounded)
                 .padding(Padding::horizontal(1)),
         )
         .alignment(Alignment::Right)
@@ -161,7 +160,6 @@ impl App {
         LineGauge::default()
             .block(Block::new())
             .label("")
-            .line_set(THICK)
             .ratio(self.prog_bar)
             .filled_style(Style::default().fg(self.get_color(&seekbar_filled)))
             .unfilled_style(Style::default().fg(self.get_color(&seekbar_unfilled)))
