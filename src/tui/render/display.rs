@@ -85,17 +85,41 @@ impl App {
         frame.render_widget(self.progress_bar(), bottom);
         // STATUS
         match self.tab {
-            Tab::Playlist => {
-                frame.render_widget(
-                    Paragraph::new(Line::from(vec![Span::styled(
-                        format!("Playlist ({} items)", self.audio.get_len()),
-                        Style::default().fg(self.get_color(status)),
-                    )]))
-                    .block(Block::new())
-                    .alignment(Alignment::Center),
-                    info,
-                );
-            }
+            Tab::Playlist => match self.audio.get_len() {
+                0 => {
+                    frame.render_widget(
+                        Paragraph::new(Line::from(vec![Span::styled(
+                            "playlist is empty",
+                            Style::default().fg(self.get_color(status)),
+                        )]))
+                        .block(Block::new())
+                        .alignment(Alignment::Center),
+                        info,
+                    );
+                }
+                1 => {
+                    frame.render_widget(
+                        Paragraph::new(Line::from(vec![Span::styled(
+                            "playlist (1 item)",
+                            Style::default().fg(self.get_color(status)),
+                        )]))
+                        .block(Block::new())
+                        .alignment(Alignment::Center),
+                        info,
+                    );
+                }
+                _ => {
+                    frame.render_widget(
+                        Paragraph::new(Line::from(vec![Span::styled(
+                            format!("playlist ({} items)", self.audio.get_len()),
+                            Style::default().fg(self.get_color(status)),
+                        )]))
+                        .block(Block::new())
+                        .alignment(Alignment::Center),
+                        info,
+                    );
+                }
+            },
             Tab::Browser => {
                 frame.render_widget(
                     Paragraph::new(Line::from(vec![Span::styled(
