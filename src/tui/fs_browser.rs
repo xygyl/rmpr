@@ -146,9 +146,15 @@ impl FileBrowser {
         self.selected = self.entries.len();
     }
 
-    /// Navigates to the user's set music directory.
+    /// Navigates to the user's set music directory and sets selected to the top (1).
     pub fn goto_music_dir(&mut self) {
         self.current_dir = self.config.directories.music_directory.clone();
+        if let Some(selected) = self
+            .sel_map
+            .get_mut(&self.config.directories.music_directory)
+        {
+            *selected = 1
+        }
     }
 
     /// Lists all items in the directory; displays directories as their name, files as their metadata name, and both by their respective colors.
