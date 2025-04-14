@@ -15,7 +15,7 @@ use ratatui::DefaultTerminal;
 use std::{
     env,
     error::Error,
-    io,
+    io::stdout,
     path::PathBuf,
     thread::sleep,
     time::{Duration, Instant},
@@ -27,7 +27,7 @@ pub fn run_tui() -> Result<(), Box<dyn Error>> {
     let current_dir = env::current_dir()?;
     let mut app = App::new(current_dir)?;
     let res = app.run(&mut terminal);
-    execute!(io::stdout(), LeaveAlternateScreen)?;
+    execute!(stdout(), LeaveAlternateScreen)?;
     disable_raw_mode()?;
     terminal.show_cursor()?;
     Ok(res?)
