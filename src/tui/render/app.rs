@@ -100,7 +100,7 @@ impl App {
 
     /// Renders the tui.
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-        let update_interval = Duration::from_millis(100);
+        let update_interval = Duration::from_millis(250);
         while self.is_running() {
             let loop_start = Instant::now();
 
