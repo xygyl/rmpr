@@ -93,15 +93,10 @@ impl App {
             .clamp(0.0, 1.0);
     }
 
-    /// Returns true if the program is running
-    fn is_running(&self) -> bool {
-        self.state == State::Running
-    }
-
     /// Renders the tui.
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
         let update_interval = Duration::from_millis(250);
-        while self.is_running() {
+        while self.state == State::Running {
             let loop_start = Instant::now();
 
             while loop_start.elapsed() < update_interval {
