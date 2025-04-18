@@ -44,7 +44,7 @@ impl App {
 
             KeyCode::Char('=') | KeyCode::Char('+') => self.audio.adjust_volume(vol_delta),
             KeyCode::Char('-') | KeyCode::Char('_') => self.audio.adjust_volume(vol_delta * -1),
-            KeyCode::Char('p') => self.audio.toggle_pause(),
+            KeyCode::Char('p') => self.audio.toggle_play_pause(),
 
             KeyCode::Char('1') => self.tab = Tab::Browser,
             KeyCode::Char('2') => self.tab = Tab::Playlist,

@@ -49,7 +49,7 @@ impl InputHandler {
     }
 
     /// Toggles between play and pause.
-    pub fn toggle_pause(&mut self) {
+    pub fn toggle_play_pause(&mut self) {
         self.paused = !self.paused;
         self.audio_player.toggle_play_pause();
     }
